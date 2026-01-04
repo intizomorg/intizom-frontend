@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# all node_modules (any depth)
+node_modules/
+
+.vercel

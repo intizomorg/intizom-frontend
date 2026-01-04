@@ -1,0 +1,620 @@
+"use client";
+
+import { useEffect, useState, useContext, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { AuthContext } from "@/context/AuthContext";
+import EditProfileModal from "@/components/profile/EditProfileModal";
+import ProfileSettingsModal from "@/components/profile/ProfileSettingsModal";
+import FollowModal from "@/components/profile/FollowListModal";
+import PostViewerModal from "@/components/profile/PostViewerModal";
+import AvatarViewerModal from "@/components/profile/AvatarViewerModal";
+
+/**
+ * ProfilePage — corrected & hardened (avatar cache busting)
+ */
+
+export default function ProfilePage() {
+  const { username: raw } = useParams();
+  const username = decodeURIComponent(raw || "");
+  const { user } = useContext(AuthContext);
+
+  if (!process.env.NEXT_PUBLIC_API_URL) {
+    console.warn("NEXT_PUBLIC_API_URL not set");
+  }
+  const API = process.env.NEXT_PUBLIC_API_URL;
+
+  const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+
+  const [tab, setTab] = useState("images");
+
+  const getToken = () => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("token");
+  };
+
+  const loadProfile = useCallback(async () => {
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      setProfile(null);
+      return null;
+    }
+    try {
+      const res = await fetch(`${API}/profile/${encodeURIComponent(username)}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+      const data = await res.json();
+      setProfile(data);
+      return data;
+    } catch (err) {
+      console.error("loadProfile error:", err);
+      setProfile(null);
+      return null;
+    }
+  }, [API, username]);
+
+  const loadPosts = useCallback(async () => {
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      setPosts([]);
+      return [];
+    }
+    try {
+      const res = await fetch(`${API}/posts/user/${encodeURIComponent(username)}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch user posts");
+      }
+      const json = await res.json();
+      const arr = Array.isArray(json) ? json : Array.isArray(json.posts) ? json.posts : [];
+     const normalized = (arr || []).map((p) => ({
+  ...p,                           // MUHIM
+  id: p._id ? String(p._id) : p.id,
+  user: p.user || p.username,     // MUHIM
+  username: p.username || p.user, // MUHIM
+  likesCount: p.likesCount || 0,
+  viewsCount: p.views || 0,
+}));
+
+      setPosts(normalized);
+      return normalized;
+    } catch (err) {
+      console.error("loadPosts error:", err);
+      setPosts([]);
+      return [];
+    }
+  }, [API, username]);
+
+  const checkFollow = useCallback(async () => {
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      setIsFollowing(false);
+      return false;
+    }
+    if (!user || user.username === username) {
+      setIsFollowing(false);
+      return false;
+    }
+    const token = getToken();
+    if (!token) {
+      setIsFollowing(false);
+      return false;
+    }
+    try {
+      const res = await fetch(`${API}/follow/check/${encodeURIComponent(username)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Follow check failed");
+      const d = await res.json();
+      setIsFollowing(!!d.isFollowing);
+      return !!d.isFollowing;
+    } catch (err) {
+      console.error("checkFollow error:", err);
+      setIsFollowing(false);
+      return false;
+    }
+  }, [API, user, username]);
+
+  const handleFollow = async () => {
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      return;
+    }
+    if (!user || user.username === username) return;
+    const token = getToken();
+    if (!token) return;
+
+    setFollowLoading(true);
+    const prevIsFollowing = isFollowing;
+    const prevFollowersCount = profile?.followers ?? 0;
+
+    setIsFollowing(true);
+    setProfile((p) => (p ? { ...p, followers: (p.followers || 0) + 1 } : p));
+
+    try {
+      const res = await fetch(`${API}/follow/${encodeURIComponent(username)}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Follow failed");
+      await loadProfile();
+    } catch (err) {
+      console.error("handleFollow error:", err);
+      setIsFollowing(prevIsFollowing);
+      setProfile((p) => (p ? { ...p, followers: prevFollowersCount } : p));
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      return;
+    }
+    if (!user || user.username === username) return;
+    const token = getToken();
+    if (!token) return;
+
+    setFollowLoading(true);
+    const prevIsFollowing = isFollowing;
+    const prevFollowersCount = profile?.followers ?? 0;
+
+    setIsFollowing(false);
+    setProfile((p) => (p ? { ...p, followers: Math.max(0, (p.followers || 1) - 1) } : p));
+
+    try {
+      const res = await fetch(`${API}/unfollow/${encodeURIComponent(username)}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Unfollow failed");
+      await loadProfile();
+    } catch (err) {
+      console.error("handleUnfollow error:", err);
+      setIsFollowing(prevIsFollowing);
+      setProfile((p) => (p ? { ...p, followers: prevFollowersCount } : p));
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!followersOpen) return;
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      setFollowersList([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/profile/${encodeURIComponent(username)}/followers`);
+        if (!res.ok) throw new Error("Failed to fetch followers");
+        const d = await res.json();
+        if (!cancelled) setFollowersList(Array.isArray(d) ? d : []);
+      } catch (err) {
+        console.error("fetch followers error:", err);
+        if (!cancelled) setFollowersList([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [followersOpen, API, username]);
+
+  useEffect(() => {
+    if (!followingOpen) return;
+    if (!API) {
+      console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
+      setFollowingList([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/profile/${encodeURIComponent(username)}/following`);
+        if (!res.ok) throw new Error("Failed to fetch following");
+        const d = await res.json();
+        if (!cancelled) setFollowingList(Array.isArray(d) ? d : []);
+      } catch (err) {
+        console.error("fetch following error:", err);
+        if (!cancelled) setFollowingList([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [followingOpen, API, username]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function init() {
+      setLoading(true);
+      const prof = await loadProfile();
+      const postsLoaded = await loadPosts();
+      if (!cancelled && user && user.username !== username) {
+        await checkFollow();
+      } else if (!cancelled) {
+        setIsFollowing(false);
+      }
+      setLoading(false);
+    }
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [username, user?.username, loadProfile, loadPosts, checkFollow]);
+
+  if (loading) {
+    return (
+      <div style={{ color: "#777", textAlign: "center", marginTop: 80 }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div style={{ color: "#777", textAlign: "center", marginTop: 80 }}>
+        Profile not found
+      </div>
+    );
+  }
+
+  const isOwn = user?.username === profile.username;
+
+  const imagePosts = posts.filter((p) => p.type !== "video");
+  const videoPosts = posts.filter((p) => p.type === "video");
+  const visiblePosts = tab === "images" ? imagePosts : posts.filter((p) => p.type === "video");
+
+  const clickable = { cursor: "pointer" };
+
+  // helper to build cache-busted avatar URL
+  const avatarSrc = profile?.avatar ? `${profile.avatar}?t=${Date.now()}` : "";
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#000",
+        color: "#fff",
+        padding: "40px",
+      }}
+    >
+      {/* HEADER */}
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          maxWidth: 900,
+          margin: "0 auto",
+        }}
+      >
+        {/* AVATAR */}
+        <div
+          onClick={() => profile?.avatar && setAvatarOpen(true)}
+          style={{
+            width: 150,
+            height: 150,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)",
+            padding: 4,
+            cursor: profile?.avatar ? "pointer" : "default",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: "50%",
+              backgroundColor: "#111",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              fontSize: 42,
+              fontWeight: "bold",
+            }}
+          >
+            {profile?.avatar ? (
+              <img
+                src={avatarSrc}
+                alt="avatar"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              (profile?.username && profile.username[0]?.toUpperCase()) || ""
+            )}
+
+          </div>
+        </div>
+
+        {/* INFO */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <h2 style={{ margin: 0, fontSize: 28 }}>{profile.username}</h2>
+
+            {isOwn && (
+              <button
+                onClick={() => setSettingsOpen(true)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#fff",
+                  fontSize: 22,
+                  cursor: "pointer",
+                }}
+                title="Settings"
+              >
+                ⚙️
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: 30, margin: "18px 0" }}>
+            <span>
+              <b>{profile.posts}</b> posts
+            </span>
+
+            <span style={clickable} onClick={() => setFollowersOpen(true)}>
+              <b>{profile.followers}</b> followers
+            </span>
+
+            <span style={clickable} onClick={() => setFollowingOpen(true)}>
+              <b>{profile.following}</b> following
+            </span>
+          </div>
+
+          {profile.bio && (
+            <div style={{ marginTop: 12, fontSize: 14, color: "#ddd" }}>
+              {profile.bio}
+            </div>
+          )}
+
+          {profile.website && (
+            <div style={{ marginTop: 6 }}>
+              <a
+                href={profile.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#1da1f2", fontSize: 14 }}
+              >
+                {profile.website}
+              </a>
+            </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            {isOwn ? (
+              <button onClick={() => setEditing(true)} style={btnStyle}>
+                Edit profile
+              </button>
+            ) : isFollowing ? (
+              <button
+                onClick={handleUnfollow}
+                disabled={followLoading}
+                style={{ ...btnStyle, opacity: 0.95, backgroundColor: "#222" }}
+              >
+                {followLoading ? "..." : "Following"}
+              </button>
+            ) : (
+              <button
+                onClick={handleFollow}
+                disabled={followLoading}
+                style={{ ...btnStyle, backgroundColor: "#1da1f2" }}
+              >
+                {followLoading ? "..." : "Follow"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* TABS */}
+      <div
+        style={{
+          maxWidth: 900,
+          margin: "40px auto 0",
+          display: "flex",
+          justifyContent: "center",
+          borderTop: "1px solid #222",
+        }}
+      >
+        <button
+          onClick={() => setTab("images")}
+          style={{
+            padding: "14px 20px",
+            background: "none",
+            border: "none",
+            color: tab === "images" ? "#fff" : "#777",
+            borderTop: tab === "images" ? "2px solid #fff" : "2px solid transparent",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Images
+        </button>
+
+        <button
+          onClick={() => setTab("video")}
+          style={{
+            padding: "14px 20px",
+            background: "none",
+            border: "none",
+            color: tab === "video" ? "#fff" : "#777",
+            borderTop: tab === "video" ? "2px solid #fff" : "2px solid transparent",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Videos
+        </button>
+      </div>
+
+      {/* POSTS GRID */}
+      <div
+        style={{
+          maxWidth: 900,
+          margin: "50px auto 0",
+          borderTop: "1px solid #222",
+          paddingTop: 30,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 4,
+        }}
+      >
+        {visiblePosts.length === 0 ? (
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              color: "#777",
+              textAlign: "center",
+              padding: 60,
+            }}
+          >
+            Hali rasmlar yo'q
+          </div>
+        ) : (
+          visiblePosts.map((p, index) => (
+            <div
+              key={p.id || index}
+              onClick={() => {
+                setViewerIndex(index);
+                setViewerOpen(true);
+              }}
+              style={{
+                aspectRatio: "1 / 1",
+                backgroundColor: "#111",
+                overflow: "hidden",
+                cursor: "pointer",
+                position: "relative",
+              }}
+              className="profile-post-item"
+            >
+              {p.type === "video" && p.media?.[0]?.url ? (
+                <video
+                  src={p.media[0].url}
+                  muted
+                  playsInline
+                  preload="metadata"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              ) : p.media?.[0]?.url ? (
+                <img
+                  src={p.media[0].url}
+                  alt="post"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              ) : null}
+
+              <div
+                className="profile-hover-overlay"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "rgba(0,0,0,0.55)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 24,
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 16,
+                }}
+              >
+                <span>❤️ {p.likesCount ?? 0}</span>
+                {p.type === "video" && <span>▶️ {p.viewsCount ?? 0}</span>}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <style jsx>{`
+        .profile-hover-overlay {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease;
+        }
+        .profile-post-item:hover .profile-hover-overlay {
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .profile-hover-overlay span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+      `}</style>
+
+      {/* EDIT PROFILE */}
+      {editing && (
+        <EditProfileModal
+          profile={profile}
+          onClose={() => setEditing(false)}
+          onSaved={async ({ avatar }) => {
+            setProfile((prev) => ({
+              ...prev,
+              avatar: avatar || prev.avatar,
+            }));
+          }}
+        />
+      )}
+
+      {/* PROFILE SETTINGS */}
+      <ProfileSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+      {/* FOLLOW MODALS */}
+      <FollowModal open={followersOpen} onClose={() => setFollowersOpen(false)} title="Followers" users={followersList} />
+      <FollowModal open={followingOpen} onClose={() => setFollowingOpen(false)} title="Following" users={followingList} />
+
+      {/* POST VIEWER */}
+      {viewerOpen && (
+        <PostViewerModal posts={visiblePosts} startIndex={viewerIndex} onClose={() => setViewerOpen(false)} />
+      )}
+
+      {/* AVATAR VIEWER (cache-busted src) */}
+      {avatarOpen && <AvatarViewerModal src={avatarSrc || profile?.avatar} onClose={() => setAvatarOpen(false)} />}
+    </div>
+  );
+}
+
+const btnStyle = {
+  backgroundColor: "#222",
+  border: "none",
+  color: "#fff",
+  padding: "8px 18px",
+  borderRadius: 6,
+  cursor: "pointer",
+};

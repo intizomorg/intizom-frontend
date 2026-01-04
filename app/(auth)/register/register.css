@@ -1,0 +1,130 @@
+/* Page background */
+.reg-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4b0082, #8b2cff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  overflow: hidden;
+}
+
+/* Background motivational image */
+.bg-img {
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 420px;
+  opacity: 0.14;
+  border-radius: 20px;
+  filter: blur(1px);
+}
+
+/* Card container */
+.reg-card {
+  width: 380px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  text-align: center;
+  z-index: 10;
+}
+
+/* Branding logo */
+.reg-logo {
+  font-size: 42px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.logo-inti {
+  color: #ffffff;
+}
+
+.logo-zom {
+  color: #b57cff;
+}
+
+/* Titles */
+.reg-title {
+  color: white;
+  font-size: 24px;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.reg-subtitle {
+  color: #e4d9ff;
+  font-size: 14px;
+  margin-bottom: 22px;
+}
+
+/* Form */
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reg-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #d9c4ff;
+  background: rgba(255, 255, 255, 0.35);
+  color: #2e1b47;
+  font-weight: 600;
+}
+
+.reg-input::placeholder {
+  color: #2e1b47;
+  opacity: 0.6;
+}
+
+/* Button */
+.reg-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(90deg, #7a1aff, #a564ff);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.reg-btn:hover {
+  opacity: 0.85;
+}
+
+/* Messages */
+.reg-msg {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #ffe8ff;
+}
+
+/* Login link */
+.reg-login-text {
+  margin-top: 20px;
+  color: #f3e9ff;
+}
+
+.reg-login-link {
+  color: #e0c1ff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.reg-login-link:hover {
+  text-decoration: underline;
+}

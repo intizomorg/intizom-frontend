@@ -1,26 +1,883 @@
-@import "tailwindcss";
+/* globals.css - IntiZOM global styles (corrected) */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* NOTE:
+   Removed global `touch-action: manipulation` and other overly-broad rules
+   that blocked React touch/click events. Kept targeted UX patches below.
+*/
+
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  height: 100%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input,
+textarea {
+  font-size: 16px !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* prevent dragging of media but do NOT globally override touch-action */
+video,
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  /* DON'T set touch-action here (it would block events) */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
+
+/* ================= ROOT & BODY ================= */
+
+html,
+body {
+  background: #000;
+  color: #fff;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* focus helper */
+:focus {
+  outline-offset: 3px;
+  outline-color: rgba(255,255,255,0.12);
+}
+
+/* ================= REDUCED MOTION ================= */
+/* Respect user preference; remove motion if requested */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ================= FEED LAYOUT ================= */
+
+.feed-wrapper {
+  display: flex;
+  gap: 32px;
+  background: #000;
+}
+
+.feed-center {
+  max-width: 520px;
+  width: 100%;
+  background: #000;
+}
+
+/* ================= POST CARD ================= */
+
+.post-card {
+  border: 1px solid #1f2933;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  background: #000;
+  /* keep some global protections but allow per-element interactions */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* header */
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #000;
+}
+
+/* user block */
+.post-user {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* username link */
+.username {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+.username:hover {
+  text-decoration: underline;
+}
+
+/* time small */
+.post-header .text-xs {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* ================= VIDEO / MEDIA ================= */
+
+/* Base post-media container: keep selection/drag protections but do NOT block touch events */
+.post-media {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+  position: relative;
+  background: #000;
+  -webkit-touch-callout: none;
+  /* IMPORTANT: do NOT set touch-action here globally; leave to elements or to explicit carousel class */
+}
+
+/* Allow media elements inside post-media to receive pointer/touch events */
+.post-media img,
+.post-media video {
+  display: block;
+  width: 100%;
+  max-height: 620px;
+  object-fit: cover;
+  background: #000;
+  /* Allow browser/React to handle touch/click on these elements */
+  touch-action: auto;
+  pointer-events: auto;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* video element specific */
+.post-media video {
+  max-height: 620px;
+  object-fit: cover;
+}
+
+/* Make sure absolutely-positioned buttons sit above media and accept pointer events */
+.post-media button {
+  pointer-events: auto !important;
+  touch-action: auto !important;
+  z-index: 9999 !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* If you want a dedicated swipeable area for carousel behavior,
+   apply .carousel-pan to the element that should capture pan gestures.
+   This avoids global interference with buttons/clicks.
+   Example: <div class="carousel-pan">...</div>
+*/
+.carousel-pan {
+  /* enables horizontal panning inside the specifically-marked container */
+  touch-action: pan-x;
+  -webkit-touch-callout: none;
+}
+
+/* ================= ACTIONS (ICON + LIKE STATE) ================= */
+
+/* container */
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  font-size: 20px;
+  background: #000;
+}
+
+/* icon button (lucide icons) */
+.icon-button {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  color: #d1d5db;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+  pointer-events: auto; /* ensure buttons are interactive */
+}
+
+.icon-button svg {
+  width: 22px;
+  height: 22px;
+  transform-origin: center;
+}
+
+/* liked state: color only by default */
+.heart-icon.liked {
+  color: #ef4444;
+}
+
+/* likes count style */
+.post-actions .likes-count,
+.post-actions .text-sm {
+  font-size: 13px;
+  color: #9ca3af;
+  user-select: none;
+}
+
+/* ensure actions container doesn't show context menu (extra safety) */
+.post-actions,
+.post-actions * {
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+}
+
+/* ================= CONTENT ================= */
+
+.post-content {
+  padding: 0 12px 12px;
+  background: #000;
+}
+
+.post-content strong {
+  color: #fff;
+}
+
+.desc {
+  color: #9ca3af;
+  font-size: 14px;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
+/* ================= RIGHT PANEL ================= */
+
+.right-panel {
+  width: 300px;
+  position: fixed;
+  right: 24px;
+  top: 90px;
+  display: none;
+  background: #000;
+  color: #fff;
+}
+
+@media (min-width: 1024px) {
+  .right-panel {
+    display: block;
+  }
+}
+
+/* ================= SEARCH ================= */
+
+.search-page {
+  max-width: 520px;
+  margin: 0 auto;
+  background: #000;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #111;
+  border: 1px solid #1f2933;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+/* ================= USER RESULT ================= */
+
+.user-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-bottom: 1px solid #1f2933;
+  background: #000;
+  cursor: pointer;
+}
+.user-result:hover {
+  background: #111;
+}
+.user-meta .username {
+  font-weight: 600;
+}
+.user-meta .bio {
+  font-size: 13px;
+  color: #9ca3af;
+}
+.no-result {
+  color: #9ca3af;
+  padding: 16px;
+  text-align: center;
+}
+
+/* ================= REELS (FINAL & SAFE) ================= */
+
+/* Reels main container */
+.reels-feed {
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  background: #000;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Each reel = one screen */
+.reel-item {
+  height: calc(100vh - 64px);
+  scroll-snap-align: start;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
+}
+
+/* 🔴 MUAMMO SHU YERDA EDI — HOZIR TUZATILDI */
+.reel-video {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #000;
+  display: block;
+}
+
+/* Landscape videolar uchun xavfsiz holat */
+@media (min-aspect-ratio: 1/1) {
+  .reel-video {
+    object-fit: contain;
+  }
+}
+
+/* Right-side actions */
+.reel-actions {
+  position: absolute;
+  right: 16px;
+  bottom: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 24px;
+  z-index: 10;
+}
+
+.reel-actions .icon-button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+/* Bottom-left info */
+.reel-info {
+  position: absolute;
+  left: 16px;
+  bottom: 80px;
+  max-width: 70%;
+  font-size: 14px;
+  z-index: 10;
+  color: #fff;
+}
+
+/* ================= VOLUME UI (CSS-only visuals) ================= */
+
+.reel-volume {
+  position: absolute;
+  left: 16px;
+  bottom: 120px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.46);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  z-index: 20;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  color: #fff;
+}
+
+.reel-volume .vol-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* muted state visual */
+.reel-item.muted .reel-volume,
+.reel-volume.muted {
+  background: rgba(255,255,255,0.03);
+  color: #9ca3af;
+}
+
+/* small active press feedback (no layout effect) */
+.reel-volume.icon-anim {
+  will-change: transform, opacity;
+  transition: transform 180ms cubic-bezier(.2,.9,.3,1), opacity 180ms ease;
+}
+.reel-volume.icon-anim:active {
+  transform: scale(0.96);
+}
+
+/* ================= LIKE / HEART ANIMATION (SAFE, ICON-ONLY) ================= */
+
+/* scoped keyframes for small icon pop; does not affect containing layout */
+@keyframes heart-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  40% {
+    transform: scale(1.4);
+  }
+  65% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Apply only to the icon element when liked; layout unaffected because transform happens on the icon itself */
+.heart-icon.liked {
+  color: #ff2d55; /* Instagram red */
+  animation: heart-pop 280ms cubic-bezier(.2,.9,.3,1);
+  will-change: transform;
+}
+
+/* Optional small center overlay (purely visual, pointer-events none) — kept minimal to avoid dominance */
+.heart-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+  opacity: 0;
+}
+.heart-overlay .overlay-heart {
+  width: 72px;
+  height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: transform 280ms ease, opacity 280ms ease;
+}
+
+/* When JS toggles the parent class (e.g., .heart-animated), make the overlay visible briefly */
+.reel-item.heart-animated .heart-overlay,
+.post-media.heart-animated .heart-overlay {
+  opacity: 1;
+}
+.reel-item.heart-animated .heart-overlay .overlay-heart,
+.post-media.heart-animated .heart-overlay .overlay-heart {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+/* Respect reduced-motion for the overlay */
+@media (prefers-reduced-motion: reduce) {
+  .heart-icon.liked,
+  .reel-item.heart-animated .heart-overlay .overlay-heart,
+  .reel-volume.icon-anim {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ================= COMMENTS PANEL ================= */
+
+.comments-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 60;
+}
+
+/* base panel */
+.comments-panel {
+  position: fixed;
+  background: #000;
+  border: 1px solid #1f2933;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+.comments-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #1f2933;
+}
+
+/* LIST */
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.comment-item {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+/* INPUT */
+.comments-input {
+  border-top: 1px solid #1f2933;
+  padding: 10px;
+}
+.comments-input input {
+  width: 100%;
+  padding: 10px;
+  background: #111;
+  border: none;
+  color: #fff;
+}
+
+/* 📱 MOBILE → BOTTOM SHEET */
+@media (max-width: 1023px) {
+  .comments-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 75vh;
+    border-radius: 16px 16px 0 0;
+    /* slide effect removed for static UX; keep immediate appearance */
+  }
+}
+
+/* 🖥 DESKTOP → RIGHT PANEL */
+@media (min-width: 1024px) {
+  .comments-panel {
+    top: 0;
+    right: 0;
+    width: 420px;
+    height: 100vh;
+    /* slide effect removed for static UX */
+  }
+}
+
+/* ================= MESSAGES / CHAT ================= */
+
+.messages-layout {
+  display: flex;
+  height: calc(100vh - 64px);
+  border: 1px solid #1f2933;
+  background: #000;
+}
+
+.chat-list {
+  width: 300px;
+  border-right: 1px solid #1f2933;
+  padding: 12px;
+  background: #000;
+}
+
+.chat-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  cursor: pointer;
+}
+.chat-item:hover,
+.chat-item.active {
+  background: #111;
+}
+.chat-meta .username {
+  font-weight: 600;
+}
+.last {
+  font-size: 13px;
+  color: #9ca3af;
+}
+.online-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  margin-left: auto;
+}
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+.chat-window.empty {
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+.chat-header {
+  padding: 12px;
+  border-bottom: 1px solid #1f2933;
+  background: #000;
+}
+.chat-messages {
+  flex: 1;
+  padding: 12px;
+  background: #000;
+}
+.msg {
+  max-width: 60%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.msg.incoming {
+  background: #111;
+}
+.msg.outgoing {
+  background: #2563eb;
+  margin-left: auto;
+}
+.chat-input {
+  border-top: 1px solid #1f2933;
+  padding: 8px;
+  background: #000;
+}
+.chat-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-input input {
+  flex: 1;        /* width o‘rniga */
+  min-width: 0;  /* ENG MUHIM QATOR */
+  padding: 10px;
+  background: #111;
+  border: none;
+  color: #fff;
+}
+
+/* 🔥 FORCE CHAT INPUT INTERACTION */
+.chat-input,
+.chat-input * {
+  pointer-events: auto !important;
+  user-select: text !important;
+}
+
+/* ================= RIGHT PANEL CARDS ================= */
+
+.rp-card {
+  background: #0b0d0f;
+  border: 1px solid #1f2933;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.rp-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rp-avatar {
+  background: #111;
+  font-weight: 600;
+}
+.rp-user {
+  flex: 1;
+  line-height: 1.2;
+}
+.rp-username {
+  font-size: 14px;
+  font-weight: 600;
+}
+.rp-brand {
+  font-size: 13px;
+  color: #9ca3af;
+}
+.rp-switch {
+  background: transparent;
+  border: none;
+  color: #8F00FF;
+  font-size: 13px;
+  cursor: pointer;
+}
+.rp-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.rp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rp-name {
+  font-size: 14px;
+}
+.rp-follow {
+  background: transparent;
+  border: none;
+  color: #8F00FF;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ================= VIDEO UX PATCH (FINAL) ================= */
+/* further reduce accidental zoom / selection and keep controls usable */
+/* NOTE: removed touch-action: manipulation here to avoid blocking events */
+.post-media,
+.post-media video {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+/* extra safety: prevent selection/copy inside post card area */
+/* NOTE: replaced disabling * for children with single selector to preserve event handling */
+.post-card {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ================= ACCESSIBILITY + SMALL FIXES ================= */
+
+/* Make sure SVG icons used for UI animations are allowed to transform when marked */
+.icon-anim,
+.icon-anim svg {
+  will-change: transform, opacity;
+}
+
+/* Reduce motion for interactive pieces when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .heart-icon.liked,
+  .reel-item.heart-animated .heart-overlay .overlay-heart,
+  .reel-volume.icon-anim {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Focus ring for keyboard users on important reel controls */
+.reel-actions .icon-button:focus,
+.reel-volume:focus,
+.heart-button:focus {
+  outline: 2px solid rgba(255,255,255,0.12);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+.profile-hover-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-post-item:hover .profile-hover-overlay {
+  opacity: 1;
+}
+
+.chat-header-user {
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.chat-header-user:hover {
+  text-decoration: underline;
+}
+
+
+/* STORIES */
+.rp-stories {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
+.rp-story-ring {
+  padding: 2px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+}
+.rp-story-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* FOLLOW BUTTON ANIMATION */
+.rp-follow {
+  transition: all 0.25s ease;
+}
+.rp-follow:hover {
+  transform: scale(1.05);
+}
+.rp-following {
+  color: #9ca3af;
+}
+
+/* Floating energy orbs */
+.rp-orb {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, #38bdf8, transparent 70%);
+  filter: blur(6px);
+  animation: float 8s infinite ease-in-out;
+}
+
+.orb-1 { top: 20%; left: 10%; animation-delay: 0s; }
+.orb-2 { bottom: 15%; right: 12%; animation-delay: 2s; }
+.orb-3 { top: 40%; right: 30%; animation-delay: 4s; }
+
+@keyframes float {
+  0%   { transform: translateY(0) translateX(0); }
+  50%  { transform: translateY(-25px) translateX(15px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+/* ================= END ================= */

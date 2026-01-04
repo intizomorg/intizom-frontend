@@ -1,0 +1,165 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+/* LEFT SIDE */
+.left {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .left {
+    display: block;
+  }
+}
+
+.phone-frame {
+  position: relative;
+  width: 380px;
+  height: 580px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.phone-bg,
+.screen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.75;
+  filter: brightness(85%);
+  border-radius: 30px;
+}
+
+/* RIGHT SIDE */
+.right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-box {
+  width: 350px;
+  background: #fff;
+  padding: 40px;
+  border: 1px solid #dbdbdb;
+  border-radius: 10px;
+}
+
+/* LOGO BRANDING */
+.logo {
+  text-align: center;
+  font-size: 42px;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.logo-inti {
+  color: #111111;
+}
+
+.logo-zom {
+  color: #7a1aff; /* binafsha */
+}
+
+.login-box input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid #dbdbdb;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(90deg, #6a0dad, #8f3fff);
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  margin-top: 15px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.error-msg {
+  text-align: center;
+  color: red;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.divider span {
+  flex: 1;
+  height: 1px;
+  background: #dbdbdb;
+}
+
+.divider p {
+  margin: 0 10px;
+  color: #8e8e8e;
+  font-size: 14px;
+}
+
+/* FACEBOOK LOGIN OLIB TASHLANDI */
+
+.forgot {
+  text-align: center;
+  font-size: 13px;
+  color: #7a1aff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.signup-box {
+  margin-top: 15px;
+  width: 350px;
+  background: #fff;
+  padding: 20px;
+  border: 1px solid #dbdbdb;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.signup-text {
+  margin-bottom: 6px;
+}
+
+.signup {
+  color: #7a1aff;
+  cursor: pointer;
+  font-weight: bold;
+}

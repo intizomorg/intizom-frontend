@@ -1,0 +1,121 @@
+:root {
+  --panel:#0f1113;
+  --muted:#9ca3af;
+  --border:#1f2933;
+}
+
+/* ================= SIDEBAR ================= */
+
+.insta-sidebar {
+  width:240px;
+  height:100vh;
+  position:fixed;
+  left:0;
+  top:0;
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  padding:20px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.insta-brand {
+  font-weight:700;
+  font-size:20px;
+  margin-bottom:12px;
+}
+
+.insta-menu {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.insta-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  border-radius:8px;
+  color:var(--muted);
+  text-decoration:none;
+  font-size:16px;
+}
+
+.insta-item:hover,
+.insta-item.active {
+  background:#111215;
+  color:#fff;
+}
+
+.insta-icon {
+  width:26px;
+  text-align:center;
+  font-size:18px;
+}
+
+/* SIDEBAR MOBILE’DA YO‘Q */
+@media (max-width: 767px){
+  .insta-sidebar {
+    display:none;
+  }
+}
+
+/* ================= BOTTOM NAV ================= */
+
+/* bottom navbar default: yashirin */
+.bottom-nav {
+  display: none;
+}
+
+/* mobile’da chiqadi */
+@media (max-width: 1023px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    background: #0f1113;
+    border-top: 1px solid #1f2933;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 50;
+  }
+}
+
+/* ================= MAIN CONTENT ================= */
+
+.app-main {
+  padding: 24px;
+  padding-top: 24px;
+  padding-bottom: 88px; /* bottom nav uchun */
+}
+
+/* DESKTOP */
+@media (min-width: 1024px) {
+  .app-main {
+    margin-left: 240px; /* sidebar */
+    padding-top: 24px;
+    padding-left: 40px;
+
+  }
+}
+
+/* MOBILE */
+@media (max-width: 1023px) {
+  .app-main {
+    margin-left: 0;
+    padding-top: 56px;  /* TOP NAVBAR */
+    padding-bottom: 88px; /* BOTTOM NAVBAR */
+  }
+}
+.brand-inti {
+  color: #ffffff;
+}
+
+.brand-zom {
+  color: #8F00FF;
+}
