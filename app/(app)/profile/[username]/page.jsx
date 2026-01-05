@@ -584,21 +584,34 @@ export default function ProfilePage() {
       </div>
 
       <style jsx>{`
-        .profile-hover-overlay {
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.2s ease;
-        }
-        .profile-post-item:hover .profile-hover-overlay {
-          opacity: 1;
-          pointer-events: auto;
-        }
-        .profile-hover-overlay span {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-        }
-      `}</style>
+  .profile-hover-overlay {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  /* Desktop uchun hover */
+  @media (hover: hover) and (pointer: fine) {
+    .profile-post-item:hover .profile-hover-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  /* Telefon uchun overlayni butunlay o‘chiramiz */
+  @media (hover: none) and (pointer: coarse) {
+    .profile-hover-overlay {
+      display: none;
+    }
+  }
+
+  .profile-hover-overlay span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+`}</style>
+
 
       {/* EDIT PROFILE */}
       {editing && (
