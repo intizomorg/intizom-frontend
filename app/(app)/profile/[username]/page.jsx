@@ -13,7 +13,24 @@ import AvatarViewerModal from "@/components/profile/AvatarViewerModal";
  * ProfilePage — corrected & hardened (avatar cache busting)
  */
 
+// 2-QADAM: useIsMobile hook (importlardan keyin)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  return isMobile;
+}
+
 export default function ProfilePage() {
+  // 3-QADAM: ProfilePage ichida qo'shildi
+  const isMobile = useIsMobile();
+
   const { username: raw } = useParams();
   const username = decodeURIComponent(raw || "");
   const { user } = useContext(AuthContext);
@@ -82,14 +99,14 @@ export default function ProfilePage() {
       }
       const json = await res.json();
       const arr = Array.isArray(json) ? json : Array.isArray(json.posts) ? json.posts : [];
-     const normalized = (arr || []).map((p) => ({
-  ...p,                           // MUHIM
-  id: p._id ? String(p._id) : p.id,
-  user: p.user || p.username,     // MUHIM
-  username: p.username || p.user, // MUHIM
-  likesCount: p.likesCount || 0,
-  viewsCount: p.views || 0,
-}));
+      const normalized = (arr || []).map((p) => ({
+        ...p,                           // MUHIM
+        id: p._id ? String(p._id) : p.id,
+        user: p.user || p.username,     // MUHIM
+        username: p.username || p.user, // MUHIM
+        likesCount: p.likesCount || 0,
+        viewsCount: p.views || 0,
+      }));
 
       setPosts(normalized);
       return normalized;
@@ -294,25 +311,30 @@ export default function ProfilePage() {
         minHeight: "100vh",
         backgroundColor: "#000",
         color: "#fff",
-        padding: "40px",
+        // 4-QADAM: root container paddingni shartli qildik
+        padding: isMobile ? "16px" : "40px",
       }}
     >
       {/* HEADER */}
       <div
         style={{
+          // 5-QADAM: header layoutni mobile uchun column qildik
           display: "flex",
-          gap: 40,
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 16 : 40,
           alignItems: "center",
           maxWidth: 900,
           margin: "0 auto",
+          textAlign: isMobile ? "center" : "left",
         }}
       >
         {/* AVATAR */}
         <div
           onClick={() => profile?.avatar && setAvatarOpen(true)}
           style={{
-            width: 150,
-            height: 150,
+            // 6-QADAM: avatar o'lchamini moslashtirdik
+            width: isMobile ? 110 : 150,
+            height: isMobile ? 110 : 150,
             borderRadius: "50%",
             background: "linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)",
             padding: 4,
@@ -346,13 +368,12 @@ export default function ProfilePage() {
             ) : (
               (profile?.username && profile.username[0]?.toUpperCase()) || ""
             )}
-
           </div>
         </div>
 
         {/* INFO */}
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: isMobile ? "center" : "flex-start" }}>
             <h2 style={{ margin: 0, fontSize: 28 }}>{profile.username}</h2>
 
             {isOwn && (
@@ -372,7 +393,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div style={{ display: "flex", gap: 30, margin: "18px 0" }}>
+          <div style={{ display: "flex", gap: 30, margin: "18px 0", justifyContent: isMobile ? "center" : "flex-start" }}>
             <span>
               <b>{profile.posts}</b> posts
             </span>
@@ -405,7 +426,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16, display: "flex", justifyContent: isMobile ? "center" : "flex-start" }}>
             {isOwn ? (
               <button onClick={() => setEditing(true)} style={btnStyle}>
                 Edit profile
@@ -480,7 +501,8 @@ export default function ProfilePage() {
           borderTop: "1px solid #222",
           paddingTop: 30,
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          // 7-QADAM: post grid ustunlarini mobil uchun 2 ta qildik
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
           gap: 4,
         }}
       >

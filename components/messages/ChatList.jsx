@@ -5,8 +5,9 @@ import ChatItem from "./ChatItem";
 
 export default function ChatList({ onSelect, activeChat, targetUser }) {
   const [chats, setChats] = useState([]);
+  
   const [loading, setLoading] = useState(true);
-
+ 
  useEffect(() => {
   async function loadChats() {
     const token = localStorage.getItem("token");
