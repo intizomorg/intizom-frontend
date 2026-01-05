@@ -523,7 +523,7 @@ export default function ProfilePage() {
             cursor: "pointer",
           }}
         >
-          Images
+          Imagesb
         </button>
 
         <button
