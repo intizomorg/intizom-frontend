@@ -440,7 +440,17 @@ export default function ProfilePage() {
           </div>
 
           {profile.bio && (
-            <div style={{ marginTop: 12, fontSize: 14, color: "#ddd" }}>
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 13,
+                color: "#ddd",
+                lineHeight: 1.45,
+                maxWidth: 420,
+                marginLeft: isMobile ? "auto" : 0,
+                marginRight: isMobile ? "auto" : 0,
+              }}
+            >
               {profile.bio}
             </div>
           )}
@@ -451,7 +461,12 @@ export default function ProfilePage() {
                 href={profile.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "#1da1f2", fontSize: 14 }}
+                style={{
+                  color: "#1da1f2",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  wordBreak: "break-all",
+                }}
               >
                 {profile.website}
               </a>
@@ -497,7 +512,9 @@ export default function ProfilePage() {
         <button
           onClick={() => setTab("images")}
           style={{
-            padding: "14px 20px",
+            padding: isMobile ? "10px 14px" : "14px 20px",
+            fontSize: isMobile ? 12 : 14,
+            letterSpacing: 0.5,
             background: "none",
             border: "none",
             color: tab === "images" ? "#fff" : "#777",
@@ -512,7 +529,9 @@ export default function ProfilePage() {
         <button
           onClick={() => setTab("video")}
           style={{
-            padding: "14px 20px",
+            padding: isMobile ? "10px 14px" : "14px 20px",
+            fontSize: isMobile ? 12 : 14,
+            letterSpacing: 0.5,
             background: "none",
             border: "none",
             color: tab === "video" ? "#fff" : "#777",
