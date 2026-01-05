@@ -476,7 +476,7 @@ export default function ProfilePage() {
           <div style={{ marginTop: 16, display: "flex", justifyContent: isMobile ? "center" : "flex-start" }}>
             {isOwn ? (
               <button onClick={() => setEditing(true)} style={btnStyle}>
-                Edit profilemni
+                Edit profile
               </button>
             ) : isFollowing ? (
               <button
@@ -523,7 +523,7 @@ export default function ProfilePage() {
             cursor: "pointer",
           }}
         >
-          Imageys
+          Images
         </button>
 
         <button
