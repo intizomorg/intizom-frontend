@@ -476,7 +476,7 @@ export default function ProfilePage() {
           <div style={{ marginTop: 16, display: "flex", justifyContent: isMobile ? "center" : "flex-start" }}>
             {isOwn ? (
               <button onClick={() => setEditing(true)} style={btnStyle}>
-                Edit profile
+                Edit profilemni
               </button>
             ) : isFollowing ? (
               <button
