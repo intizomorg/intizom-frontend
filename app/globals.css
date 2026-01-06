@@ -978,6 +978,57 @@ body.page--reels .reel-video {
     object-fit: contain;
   }
 }
+/* ================= MOBILE TOP BAR (INSTAGRAM STYLE) ================= */
+
+.mobile-topbar {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .mobile-topbar {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    background: #000;
+    border-bottom: 1px solid #1f2933;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    z-index: 70;
+  }
+
+  .mobile-brand {
+    font-weight: 700;
+    font-size: 18px;
+    display: flex;
+    gap: 2px;
+  }
+
+  .mobile-upload-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+
+  .mobile-upload-icon {
+    width: 26px;
+    height: 26px;
+    stroke-width: 2;
+  }
+}
+@media (max-width: 1023px) {
+  .app-main {
+    padding-top: 56px;     /* mobile-topbar balandligi */
+    padding-bottom: 88px; /* bottom-nav balandligi */
+  }
+}
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
    Uncomment to force .app-main to stop scrolling across the whole app.

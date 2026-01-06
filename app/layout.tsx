@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { ReactNode } from "react";
+import MobileTopBar from "@/components//home/MobileTopBar";
+import BottomNav from "@/components/nav/BottomNav";
 
 export const metadata = {
   metadataBase: new URL("https://intizom.org"),
@@ -32,7 +34,11 @@ export const viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="uz">
-      <body>{children}</body>
+      <body>
+        <MobileTopBar />
+        {children}
+        <BottomNav />
+      </body>
     </html>
   );
 }
