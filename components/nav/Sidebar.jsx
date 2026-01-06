@@ -4,15 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import {
+  Home,
+  Search,
+  PlaySquare,
+  Mail,
+  PlusSquare,
+  UserCircle
+} from "lucide-react";
 import "./instaSidebar.css";
 
 const menu = [
-  { href: "/", label: "Home", icon: "a" },
-  { href: "/search", label: "Search", icon: "⌕" },
-  { href: "/reels", label: "Reels", icon: "▶" },
-  { href: "/messages", label: "Messages", icon: "✉" },
-  { href: "/upload", label: "Create", icon: "＋" },
-  // ❌ /profile statik link yo‘q
+  { href: "/", label: "Home", icon: Home },
+  { href: "/search", label: "Search", icon: Search },
+  { href: "/reels", label: "Reels", icon: PlaySquare },
+  { href: "/messages", label: "Messages", icon: Mail },
+  { href: "/upload", label: "Create", icon: PlusSquare },
 ];
 
 export default function Sidebar() {
@@ -21,36 +28,36 @@ export default function Sidebar() {
 
   return (
     <aside className="insta-sidebar">
-      {/* BRAND */}
       <div className="insta-brand">
         <span className="brand-inti">inti</span>
         <span className="brand-zom">ZOM</span>
       </div>
 
-      {/* MENU */}
       <nav className="insta-menu">
-        {menu.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`insta-item ${pathname === item.href ? "active" : ""}`}
-          >
-            <span className="insta-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {menu.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`insta-item ${pathname === item.href ? "active" : ""}`}
+            >
+              <Icon className="insta-icon" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
 
-        {/* DYNAMIC PROFILE LINK */}
         <Link
           href={user ? `/profile/${user.username}` : "/login"}
           className={`insta-item ${
             pathname === `/profile/${user?.username}` ? "active" : ""
           }`}
         >
-          <span className="insta-icon">◉</span>
+          <UserCircle className="insta-icon" />
           <span>Profile</span>
         </Link>
       </nav>
     </aside>
   );
-}        
+}
