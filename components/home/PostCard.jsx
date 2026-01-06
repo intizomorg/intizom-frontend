@@ -481,6 +481,60 @@ function PostCard({ post, onDeleted }) {
 
   const avatarLetter = (postUsername || "").trim()[0]?.toUpperCase() || "U";
 
+  // ------------------------
+  // Overlay & drawer styles
+  // ------------------------
+  const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 90,
+    display: "flex",
+    // 1) overlay container always bottom-aligned
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    // control interactivity & fade
+    pointerEvents: commentsOpen ? "auto" : "none",
+    opacity: commentsOpen ? 1 : 0,
+    transition: "opacity 220ms ease",
+  };
+
+  const backdropStyle = {
+    width: "100%",
+    maxWidth: "100%",
+    // backdrop fades in/out with overlay
+    background: "rgba(0,0,0,0.55)",
+    transition: "opacity 220ms ease",
+    opacity: commentsOpen ? 1 : 0,
+  };
+
+  // Drawer style with conditional transform and cubic-bezier transition
+  const drawerStyle = {
+    width: isMobile ? "100%" : "92%",
+    maxWidth: isMobile ? "100%" : 420,
+    background: "#0b0b0b",
+    borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.03)",
+    borderTopLeftRadius: isMobile ? 16 : 0,
+    borderTopRightRadius: isMobile ? 16 : 0,
+    height: isMobile ? "72vh" : "100vh",
+    boxShadow: isMobile ? "0 -8px 24px rgba(0,0,0,0.6)" : "-8px 0 24px rgba(0,0,0,0.6)",
+    display: "flex",
+    flexDirection: "column",
+    zIndex: 91,
+    // 2) drawer transform: conditional slide-up on mobile, slide-right on desktop
+    transform: commentsOpen
+      ? "translate(0,0)"
+      : isMobile
+      ? "translateY(100%)"
+      : "translateX(100%)",
+    transition: "transform 260ms cubic-bezier(.2,.8,.2,1)",
+    willChange: "transform",
+  };
+
+  // Additional inline safety: if you prefer the explicit desktop-only override:
+  // if (!isMobile) {
+  //   drawerStyle.transform = commentsOpen ? "translateX(0)" : "translateX(100%)";
+  // }
+
   return (
     <article className="post-card" onContextMenu={(e) => e.preventDefault()}>
       <header
@@ -743,123 +797,93 @@ function PostCard({ post, onDeleted }) {
         )}
       </div>
 
-      {/* ===== Updated: Right-side comments drawer (overlay) ===== */}
-      {commentsOpen && (
+      {/* ===== Updated: Right-side / bottom comments drawer (overlay) - ALWAYS MOUNTED for smooth animations ===== */}
+      <div
+        className="comments-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!commentsOpen}
+        style={overlayStyle}
+        onClick={() => commentsOpen && setCommentsOpen(false)}
+      >
+        {/* Backdrop (left area) */}
         <div
-          className="comments-overlay"
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 90,
-            display: "flex",
-            justifyContent: isMobile ? "center" : "flex-end",
-            alignItems: isMobile ? "flex-end" : "stretch",
-            pointerEvents: "auto",
-          }}
-          onClick={() => setCommentsOpen(false)}
+          aria-hidden
+          style={backdropStyle}
+        />
+
+        {/* Drawer panel */}
+        <aside
+          className="comments-drawer"
+          onClick={(e) => e.stopPropagation()}
+          style={drawerStyle}
         >
-          {/* Backdrop (left area) */}
-          <div
-            aria-hidden
-            style={{
-              width: "100%",
-              maxWidth: "100%",
-              background: "rgba(0,0,0,0.55)",
-              transition: "opacity 220ms ease",
-            }}
-          />
+          <div style={{ padding: 12, borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontWeight: 700 }}>{postUsername || "Комментарии"}</div>
+            <button
+              onClick={() => setCommentsOpen(false)}
+              aria-label="Close comments"
+              style={{ background: "transparent", border: "none", color: "#ddd", fontSize: 18, padding: 6 }}
+            >
+              ✕
+            </button>
+          </div>
 
-          {/* Drawer panel */}
-          <aside
-            className="comments-drawer"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: isMobile ? "100%" : "92%",
-              maxWidth: isMobile ? "100%" : 420,
-              background: "#0b0b0b",
-              borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.03)",
-              borderTopLeftRadius: isMobile ? 16 : 0,
-              borderTopRightRadius: isMobile ? 16 : 0,
-              height: isMobile ? "72vh" : "100vh",
-              boxShadow: isMobile
-                ? "0 -8px 24px rgba(0,0,0,0.6)"
-                : "-8px 0 24px rgba(0,0,0,0.6)",
-              transform: "translateY(0)",
-              transition: "transform 220ms ease",
-              display: "flex",
-              flexDirection: "column",
-              zIndex: 91,
-            }}
-          >
-            <div style={{ padding: 12, borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontWeight: 700 }}>{postUsername || "Комментарии"}</div>
-              <button
-                onClick={() => setCommentsOpen(false)}
-                aria-label="Close comments"
-                style={{ background: "transparent", border: "none", color: "#ddd", fontSize: 18, padding: 6 }}
-              >
-                ✕
-              </button>
-            </div>
+          {/* Comments content area */}
+          <div style={{ overflowY: "auto", padding: 12, flex: 1 }}>
+            {/* loading indicator */}
+            {loadingComments && (
+              <div className="text-xs text-gray-400 mt-2" aria-live="polite">
+                Yuklanmoqda...
+              </div>
+            )}
 
-            {/* Comments content area */}
-            <div style={{ overflowY: "auto", padding: 12, flex: 1 }}>
-              {/* loading indicator */}
-              {loadingComments && (
-                <div className="text-xs text-gray-400 mt-2" aria-live="polite">
-                  Yuklanmoqda...
-                </div>
+            {/* comments list */}
+            <div>
+              {comments.length === 0 && !loadingComments && (
+                <div className="text-sm text-gray-400">Hozircha komment yo‘q.</div>
               )}
 
-              {/* comments list */}
-              <div>
-                {comments.length === 0 && !loadingComments && (
-                  <div className="text-sm text-gray-400">Hozircha komment yo‘q.</div>
-                )}
-
-                {comments.map((c) => (
-                  <div key={c.id ?? `${c.user}-${c.createdAt}`} className="text-sm mt-3" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <div style={{ minWidth: 36, textAlign: "center", color: "#ddd", fontWeight: 600 }}>
-                      {String((c.user || "U").trim()[0] || "U").toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <strong style={{ marginRight: 6 }}>{c.user}</strong>
-                        <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
-                      </div>
-                      <div style={{ marginTop: 4 }}>{c.text}</div>
-                    </div>
+              {comments.map((c) => (
+                <div key={c.id ?? `${c.user}-${c.createdAt}`} className="text-sm mt-3" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <div style={{ minWidth: 36, textAlign: "center", color: "#ddd", fontWeight: 600 }}>
+                    {String((c.user || "U").trim()[0] || "U").toUpperCase()}
                   </div>
-                ))}
-              </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <strong style={{ marginRight: 6 }}>{c.user}</strong>
+                      <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
+                    </div>
+                    <div style={{ marginTop: 4 }}>{c.text}</div>
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* Comment composer (fixed to drawer bottom) */}
-            <div style={{ padding: 12, borderTop: "1px solid rgba(255,255,255,0.03)", background: "transparent" }}>
-              <form onSubmit={submitComment} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <input
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Komment yozing..."
-                  className="w-full p-2 rounded"
-                  style={{
-                    background: "#0b0b0b",
-                    border: "1px solid rgba(255,255,255,0.04)",
-                    color: "#fff",
-                    outline: "none",
-                  }}
-                  aria-label="Komment"
-                />
-                <button type="submit" className="px-3 py-2 rounded font-semibold" style={{ background: "#8F00FF", color: "#fff" }}>
-                  Yuborishma
-                </button>
-              </form>
-            </div>
-          </aside>
-        </div>
-      )}
+          {/* Comment composer (fixed to drawer bottom) */}
+          <div style={{ padding: 12, borderTop: "1px solid rgba(255,255,255,0.03)", background: "transparent" }}>
+            <form onSubmit={submitComment} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Komment yozing..."
+                className="w-full p-2 rounded"
+                style={{
+                  background: "#0b0b0b",
+                  border: "1px solid rgba(255,255,255,0.04)",
+                  color: "#fff",
+                  outline: "none",
+                }}
+                aria-label="Komment"
+              />
+              <button type="submit" className="px-3 py-2 rounded font-semibold" style={{ background: "#8F00FF", color: "#fff" }}>
+                Yuborish
+              </button>
+            </form>
+          </div>
+        </aside>
+      </div>
 
       {showUnfollowModal && (
         <div
