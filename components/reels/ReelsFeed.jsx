@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReelItem from "./ReelItem";
 
 /**
- * ReelsFeed — final, production-ready feed
- * - Requires process.env.NEXT_PUBLIC_API_URL (no fallback)
+ * ReelsFeed — production-ready feed
+ * - Expects NEXT_PUBLIC_API_URL to be set (renders friendly message if not)
  * - Uses scroll-snap + 100svh for consistent fullscreen
  * - Robust pagination with refs to avoid races
- * - Sentinel observed with IntersectionObserver (rootMargin to prefetch)
+ * - Sentinel observed with IntersectionObserver using the feed DOM node as root
  */
 
 export default function ReelsFeed() {
@@ -21,13 +21,13 @@ export default function ReelsFeed() {
   }, []);
 
   // --- API must be explicitly provided ---
-  const API = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
-    ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
-    : "";
+  const API =
+    typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
+      ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
+      : "";
 
   if (!API) {
-    // Don't throw inside a client component (this would crash the entire client-side UI).
-    // Instead render a visible error message so the app stays usable.
+    // Friendly fallback UI instead of throwing (throws crash the client)
     return (
       <div style={{ padding: 24, color: "#f87171", textAlign: "center" }}>
         Konfiguratsiya xatosi: NEXT_PUBLIC_API_URL sozlanmagan.
@@ -53,8 +53,12 @@ export default function ReelsFeed() {
   const feedRef = useRef(null);
 
   // keep refs in sync with state
-  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
-  useEffect(() => { pageRef.current = page; }, [page]);
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
 
   /**
    * fetchReels(pageNum)
@@ -72,10 +76,14 @@ export default function ReelsFeed() {
       setError(null);
 
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const token =
+          typeof window !== "undefined" ? localStorage.getItem("token") : null;
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const res = await fetch(`${API}/posts/reels?page=${pageNum}&limit=6`, { headers });
+        const res = await fetch(
+          `${API}/posts/reels?page=${pageNum}&limit=6`,
+          { headers }
+        );
 
         if (!res.ok) {
           throw new Error("HTTP " + res.status);
@@ -93,25 +101,19 @@ export default function ReelsFeed() {
           .map((p) => ({
             ...p,
             id: String(p._id ?? p.id ?? ""),
-            // prefer username when available (avoid "user" fallback)
             user: p.username ?? p.user,
             liked: Boolean(p.liked),
             likesCount: Number(p.likesCount ?? p.likes ?? 0),
             viewsCount: Number(p.viewsCount ?? p.views ?? 0),
           }))
           .filter(
-            (p) =>
-              p.id &&
-              p.type === "video" &&
-              Array.isArray(p.media) &&
-              p.media[0]?.url
+            (p) => p.id && p.type === "video" && Array.isArray(p.media) && p.media[0]?.url
           );
 
         // If no items returned -> stop further fetching
         if (onlyVideos.length === 0) {
           setHasMore(false);
           hasMoreRef.current = false;
-          // if first page returned empty, ensure reels cleared
           if (pageNum === 1) setReels([]);
           return;
         }
@@ -127,8 +129,6 @@ export default function ReelsFeed() {
               map.set(p.id, p);
             }
           });
-          // preserve original order: previous items followed by new page items
-          // but ensure we return values in insertion order the map maintains
           return Array.from(map.values());
         });
 
@@ -220,13 +220,8 @@ export default function ReelsFeed() {
     }
   };
 
-  // Inject minimal CSS for svh fallback + scroll-snap
-  // Note: inline <style> in component to keep single-file portability
-
   return (
     <>
-      <style>{injectedStyles}</style>
-
       {error ? (
         <div style={{ color: "#f87171", textAlign: "center", marginTop: 40 }}>
           {error}
