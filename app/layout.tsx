@@ -2,8 +2,14 @@ import "./globals.css";
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "intiZOM",
-  description: "Discipline-based social network",
+  title: {
+    default: "Better Call Odil",
+    template: "%s | Better Call Odil",
+  },
+  description: "Better Call Odil – zamonaviy platforma",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport = {
@@ -13,11 +19,7 @@ export const viewport = {
   userScalable: false,
 };
 
-type RootLayoutProps = {
-  children: ReactNode;
-};
-
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>{children}</body>

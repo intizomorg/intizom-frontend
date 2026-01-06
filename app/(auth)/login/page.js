@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Better Call Odil – Kirish",
+  description: "Better Call Odil platformasiga kirish sahifasi",
+};
+
 "use client";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +34,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await loginUser({ username, password });
 
@@ -63,22 +70,19 @@ export default function LoginPage() {
             <img
               src="https://images.unsplash.com/photo-1581091870675-e1bb327b32b8?auto=format&fit=crop&w=700&q=80"
               className="phone-bg"
-              alt="motivatsiya"
+              alt="Better Call Odil"
             />
             <img
               src="https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=700&q=80"
               className="screen"
-              alt="intizom"
+              alt="Better Call Odil"
             />
           </div>
         </div>
 
         <div className="right">
           <div className="login-box">
-            <h1 className="logo">
-              <span className="logo-inti">inti</span>
-              <span className="logo-zom">ZOM</span>
-            </h1>
+            <h1 className="logo">Better Call Odil</h1>
 
             <form onSubmit={handleSubmit}>
               <input
