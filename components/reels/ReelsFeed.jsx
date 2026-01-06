@@ -207,7 +207,6 @@ export default function ReelsFeed() {
   // Inject minimal CSS for svh fallback + scroll-snap
   // Note: inline <style> in component to keep single-file portability
 
-
   return (
     <>
       <style>{injectedStyles}</style>
@@ -223,7 +222,6 @@ export default function ReelsFeed() {
           onKeyDown={handleKeyDown}
           tabIndex={0}
           aria-label="Reels feed"
-          style={{ outline: "none" }}
         >
           {reels.length === 0 && !loading ? (
             <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>

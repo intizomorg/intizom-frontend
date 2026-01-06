@@ -449,18 +449,6 @@ export default function ReelItem({ post }) {
       tabIndex={0}
       role="article"
       aria-label={`Reel by ${usernameStr || "user"}: ${post.title || ""}`}
-      style={{
-        position: "relative",
-        height: "100%",
-width: "100%",
-
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#000",
-        overflow: "hidden",
-        outline: "none",
-      }}
     >
       <style>{`
         @keyframes swipeAnim {
@@ -470,109 +458,106 @@ width: "100%",
         }
       `}</style>
 
-      <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
-       <div className="reel-video-wrap">
-  <video
-    ref={videoRef}
-    src={videoUrl}
-    className="reel-video"
-    playsInline
-    loop
-    muted={reelsMuted}
-  />
-</div>
+      <div className="reel-video-wrap">
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          className="reel-video"
+          playsInline
+          loop
+          muted={reelsMuted}
+        />
+      </div>
 
+      {/* mute/unmute */}
+      <button
+        onClick={toggleGlobalMute}
+        aria-label={reelsMuted ? "Unmute reels" : "Mute reels"}
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 14,
+          zIndex: 50,
+          background: "rgba(0,0,0,0.5)",
+          border: "none",
+          borderRadius: 20,
+          padding: "8px 10px",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 14,
+        }}
+      >
+        {reelsMuted ? "Unmute" : "Mute"}
+      </button>
 
-        {/* mute/unmute */}
+      {/* overlay heart */}
+      {overlayHeart && (
+        <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 30 }}>
+          <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 21s-7.5-4.873-10.5-8.25C-0.5 8.75 4 4 7.5 6.5 9 7.75 10 9.5 12 11c2-1.5 3-3.25 4.5-4.5C20 4 24.5 8.75 22.5 12.75 19.5 16.127 12 21 12 21z" fill="#ef4444" />
+          </svg>
+        </div>
+      )}
+
+      {/* right-side actions */}
+      <div style={{ position: "absolute", right: 12, bottom: "18%", display: "flex", flexDirection: "column", gap: 18, zIndex: 20, alignItems: "center" }} aria-hidden>
         <button
-          onClick={toggleGlobalMute}
-          aria-label={reelsMuted ? "Unmute reels" : "Mute reels"}
-          style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            zIndex: 50,
-            background: "rgba(0,0,0,0.5)",
-            border: "none",
-            borderRadius: 20,
-            padding: "8px 10px",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: 14,
-          }}
+          onClick={(e) => { e.stopPropagation(); toggleLike(e); }}
+          aria-pressed={liked}
+          aria-label={liked ? "Unlike" : "Like"}
+          style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(0,0,0,0.45)", border: "none", color: liked ? "#ef4444" : "#fff", fontSize: 20, cursor: "pointer" }}
         >
-          {reelsMuted ? "Unmute" : "Mute"}
+          {liked ? "❤️" : "🤍"}
         </button>
 
-        {/* overlay heart */}
-        {overlayHeart && (
-          <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 30 }}>
-            <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 21s-7.5-4.873-10.5-8.25C-0.5 8.75 4 4 7.5 6.5 9 7.75 10 9.5 12 11c2-1.5 3-3.25 4.5-4.5C20 4 24.5 8.75 22.5 12.75 19.5 16.127 12 21 12 21z" fill="#ef4444" />
-            </svg>
-          </div>
-        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); setCommentsOpen(true); }}
+          aria-label="Comments"
+          style={{ width: 52, height: 52, borderRadius: 12, background: "rgba(0,0,0,0.45)", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}
+        >
+          💬
+        </button>
 
-        {/* right-side actions */}
-        <div style={{ position: "absolute", right: 12, bottom: "18%", display: "flex", flexDirection: "column", gap: 18, zIndex: 20, alignItems: "center" }} aria-hidden>
-          <button
-            onClick={(e) => { e.stopPropagation(); toggleLike(e); }}
-            aria-pressed={liked}
-            aria-label={liked ? "Unlike" : "Like"}
-            style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(0,0,0,0.45)", border: "none", color: liked ? "#ef4444" : "#fff", fontSize: 20, cursor: "pointer" }}
-          >
-            {liked ? "❤️" : "🤍"}
-          </button>
-
-          <button
-            onClick={(e) => { e.stopPropagation(); setCommentsOpen(true); }}
-            aria-label="Comments"
-            style={{ width: 52, height: 52, borderRadius: 12, background: "rgba(0,0,0,0.45)", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}
-          >
-            💬
-          </button>
-
-          <div style={{ color: "#fff", fontSize: 12, textAlign: "center", userSelect: "none", lineHeight: 1.1 }}>
-            <div style={{ fontWeight: 700 }}>{likesCount}</div>
-            <div style={{ opacity: 0.8, fontSize: 11 }}>{views} views</div>
-          </div>
+        <div style={{ color: "#fff", fontSize: 12, textAlign: "center", userSelect: "none", lineHeight: 1.1 }}>
+          <div style={{ fontWeight: 700 }}>{likesCount}</div>
+          <div style={{ opacity: 0.8, fontSize: 11 }}>{views} views</div>
         </div>
+      </div>
 
-        {/* left-bottom info */}
-        <div style={{ position: "absolute", left: 12, bottom: 20, color: "#fff", zIndex: 40, maxWidth: "72%" }} aria-hidden>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Link href={`/profile/${profilePath}`} onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-              <div aria-hidden style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#333", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#fff" }}>
-                {(typeof usernameStr === "string" && usernameStr[0]) ? usernameStr[0].toUpperCase() : "U"}
-              </div>
-
-              <div style={{ fontWeight: 700 }}>@{usernameStr || "user"}</div>
-            </Link>
-
-            {followTarget && (
-              !isFollowing ? (
-                <button onClick={toggleFollow} aria-label="Follow" disabled={followLoading} style={{ marginLeft: 8, background: "#1da1f2", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
-                  {followLoading ? "..." : "Follow"}
-                </button>
-              ) : (
-                <button onClick={toggleFollow} aria-label="Unfollow" disabled={followLoading} style={{ marginLeft: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
-                  {followLoading ? "..." : "Following"}
-                </button>
-              )
-            )}
-          </div>
-
-          {post.title && (
-            <div style={{ fontSize: 14, lineHeight: "1.15", opacity: 0.95, marginTop: 8 }}>
-              {post.title}
+      {/* left-bottom info */}
+      <div style={{ position: "absolute", left: 12, bottom: 20, color: "#fff", zIndex: 40, maxWidth: "72%" }} aria-hidden>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link href={`/profile/${profilePath}`} onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, color: "#fff", textDecoration: "none", fontWeight: 600 }}>
+            <div aria-hidden style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#333", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#fff" }}>
+              {(typeof usernameStr === "string" && usernameStr[0]) ? usernameStr[0].toUpperCase() : "U"}
             </div>
+
+            <div style={{ fontWeight: 700 }}>@{usernameStr || "user"}</div>
+          </Link>
+
+          {followTarget && (
+            !isFollowing ? (
+              <button onClick={toggleFollow} aria-label="Follow" disabled={followLoading} style={{ marginLeft: 8, background: "#1da1f2", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
+                {followLoading ? "..." : "Follow"}
+              </button>
+            ) : (
+              <button onClick={toggleFollow} aria-label="Unfollow" disabled={followLoading} style={{ marginLeft: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
+                {followLoading ? "..." : "Following"}
+              </button>
+            )
           )}
         </div>
 
-        <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", opacity: 0.8, fontSize: 12, zIndex: 30, display: "flex", alignItems: "center", gap: 6, animation: "swipeAnim 1.6s ease-in-out infinite", color: "#fff", userSelect: "none" }} aria-hidden>
-          <span style={{ fontSize: 14 }}>↑</span>
-          <span>swipe</span>
-        </div>
+        {post.title && (
+          <div style={{ fontSize: 14, lineHeight: "1.15", opacity: 0.95, marginTop: 8 }}>
+            {post.title}
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", opacity: 0.8, fontSize: 12, zIndex: 30, display: "flex", alignItems: "center", gap: 6, animation: "swipeAnim 1.6s ease-in-out infinite", color: "#fff", userSelect: "none" }} aria-hidden>
+        <span style={{ fontSize: 14 }}>↑</span>
+        <span>swipe</span>
       </div>
 
       {/* Comments sheet (bottom-up) */}
