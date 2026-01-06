@@ -853,7 +853,7 @@ function PostCard({ post, onDeleted }) {
                   aria-label="Komment"
                 />
                 <button type="submit" className="px-3 py-2 rounded font-semibold" style={{ background: "#8F00FF", color: "#fff" }}>
-                  Yuborish
+                  Yuborishma
                 </button>
               </form>
             </div>
