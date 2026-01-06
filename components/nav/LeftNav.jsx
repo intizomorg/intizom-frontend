@@ -13,7 +13,7 @@ const menu = [
   { href: "/", label: "Home", icon: "🏠" },
   { href: "/search", label: "Search", icon: "🔍" },
   { href: "/reels", label: "Reels", icon: "🎬" },
-  { href: "/messages", label: "Messages", icon: "💬" },
+  { href: "/messages", label: "Messages", icon: "B" },
   { href: "/notifications", label: "Notifications", icon: "❤️" },
   { href: "/upload", label: "Create", icon: "➕" },
 ];
