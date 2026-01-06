@@ -9,6 +9,20 @@ import { AuthContext } from "@/context/AuthContext";
  * PostCard — hardened and defensive version (with comments loading + optimistic append)
  * Modified: comments panel now opens as a right-side sliding drawer (overlay) instead of bottom inline area.
  */
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  return isMobile;
+}
+
 function getToken() {
   if (typeof document === "undefined") return null;
   const m = document.cookie.match(/(?:^|; )token=([^;]*)/);
@@ -31,6 +45,7 @@ function safeText(val, fallback = "") {
 }
 
 function PostCard({ post, onDeleted }) {
+  const isMobile = useIsMobile();
   const { user } = useContext(AuthContext);
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -739,8 +754,8 @@ function PostCard({ post, onDeleted }) {
             inset: 0,
             zIndex: 90,
             display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "stretch",
+            justifyContent: isMobile ? "center" : "flex-end",
+            alignItems: isMobile ? "flex-end" : "stretch",
             pointerEvents: "auto",
           }}
           onClick={() => setCommentsOpen(false)}
@@ -761,13 +776,17 @@ function PostCard({ post, onDeleted }) {
             className="comments-drawer"
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "92%",
-              maxWidth: 420,
+              width: isMobile ? "100%" : "92%",
+              maxWidth: isMobile ? "100%" : 420,
               background: "#0b0b0b",
-              borderLeft: "1px solid rgba(255,255,255,0.03)",
-              height: "100vh",
-              boxShadow: "-8px 0 24px rgba(0,0,0,0.6)",
-              transform: "translateX(0)",
+              borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.03)",
+              borderTopLeftRadius: isMobile ? 16 : 0,
+              borderTopRightRadius: isMobile ? 16 : 0,
+              height: isMobile ? "72vh" : "100vh",
+              boxShadow: isMobile
+                ? "0 -8px 24px rgba(0,0,0,0.6)"
+                : "-8px 0 24px rgba(0,0,0,0.6)",
+              transform: "translateY(0)",
               transition: "transform 220ms ease",
               display: "flex",
               flexDirection: "column",
