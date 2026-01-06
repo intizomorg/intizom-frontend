@@ -12,6 +12,10 @@ import ReelItem from "./ReelItem";
  *  - hasMore race-condition fixed with hasMoreRef
  *  - IntersectionObserver tuned with rootMargin to avoid spammy triggers
  *  - Stop fetching when backend returns empty page (avoid infinite loop)
+ *
+ * Additional desktop wheel fix:
+ *  - locks wheel-based scrolling so each wheel action moves exactly one reel
+ *  - removes scroll-snap to avoid conflicts with inertial desktop scroll
  */
 
 export default function ReelsFeed() {
@@ -34,6 +38,10 @@ export default function ReelsFeed() {
   // refs to avoid closure-related race conditions inside fetch/observer
   const fetchingRef = useRef(false);
   const hasMoreRef = useRef(true);
+
+  // --- Desktop wheel locking refs ---
+  const scrollingRef = useRef(false);
+  const feedRef = useRef(null);
 
   // keep hasMoreRef synced with hasMore state
   useEffect(() => {
@@ -199,13 +207,39 @@ export default function ReelsFeed() {
     );
   }
 
+  // Wheel handler: lock wheel scrolling so each wheel action advances exactly one reel
+  const handleWheel = (e) => {
+    // ignore when already animating
+    if (scrollingRef.current) return;
+
+    // small deltas shouldn't trigger a scroll
+    if (Math.abs(e.deltaY) < 5) return;
+
+    scrollingRef.current = true;
+
+    const delta = e.deltaY;
+    const direction = delta > 0 ? 1 : -1;
+
+    // scroll by exactly one viewport height
+    feedRef.current?.scrollBy({
+      top: direction * window.innerHeight,
+      behavior: "smooth",
+    });
+
+    // unlock after animation (tweak timeout if needed)
+    setTimeout(() => {
+      scrollingRef.current = false;
+    }, 600);
+  };
+
   return (
     <div
+      ref={feedRef}
       className="reels-feed"
+      onWheel={handleWheel}
       style={{
         height: "100vh",
-        overflowY: "scroll",
-        scrollSnapType: "y mandatory",
+        overflowY: "hidden", // hide native scroll to avoid inertial multi-item jumps on desktop
         backgroundColor: "#000",
       }}
     >
@@ -218,7 +252,6 @@ export default function ReelsFeed() {
           <div
             key={post.id}
             style={{
-              scrollSnapAlign: "start",
               height: "100vh",
             }}
           >

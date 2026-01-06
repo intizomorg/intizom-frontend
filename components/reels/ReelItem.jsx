@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 
 /**
- * ReelItem (fixed)
+ * ReelItem (fixed + layout adjustments)
  * - API constant from NEXT_PUBLIC_API_URL (no trailing slash)
  * - Like state uses post.liked
  * - Single optimistic toggleLike with proper rollback
  * - Comments use backend format { comments: [...] }
  * - Follow endpoints use post.userId || post.user
  * - Various guards when API or token missing
+ * - Layout tweaks per request (wrapper, action buttons, full-screen comments)
+ * - UX: overscrollBehavior fix
  */
 
 export default function ReelItem({ post }) {
@@ -77,19 +79,33 @@ export default function ReelItem({ post }) {
 
   // --- GLOBAL FLAGS: do NOT overwrite existing global flags on every mount ---
   useEffect(() => {
-  if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
 
-  if (window.__REELS_MUTED__ === undefined) {
-    window.__REELS_MUTED__ = false; // 🔥 default ovoz yoqilgan bo‘lsin
-  }
+    if (window.__REELS_MUTED__ === undefined) {
+      window.__REELS_MUTED__ = false; // default ovoz yoqilgan bo‘lsin
+    }
 
-  if (window.__ACTIVE_REEL_VIDEO__ === undefined) {
-    window.__ACTIVE_REEL_VIDEO__ = null;
-  }
+    if (window.__ACTIVE_REEL_VIDEO__ === undefined) {
+      window.__ACTIVE_REEL_VIDEO__ = null;
+    }
 
-  setReelsMuted(Boolean(window.__REELS_MUTED__));
-}, []);
+    setReelsMuted(Boolean(window.__REELS_MUTED__));
+  }, []);
 
+  // --- UX bonus: overscroll glitch fix (iOS/Android) ---
+  useEffect(() => {
+    try {
+      if (typeof document !== "undefined" && document?.body) {
+        const prev = document.body.style.overscrollBehavior;
+        document.body.style.overscrollBehavior = "contain";
+        return () => {
+          document.body.style.overscrollBehavior = prev || "";
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // fetch follow state if token exists (guard when API missing)
   useEffect(() => {
@@ -219,8 +235,8 @@ export default function ReelItem({ post }) {
         window.__ACTIVE_REEL_VIDEO__ = videoEl;
 
         // autoplay only muted
-videoEl.muted = window.__REELS_MUTED__ === true;
-videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
+        videoEl.muted = window.__REELS_MUTED__ === true;
+        videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
 
         videoEl
           .play()
@@ -406,20 +422,19 @@ videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
     lastTapRef.current = now;
 
     pointerSingleTimerRef.current = setTimeout(() => {
-  const v = videoRef.current;
-  if (!v) return;
+      const v = videoRef.current;
+      if (!v) return;
 
-  if (v.paused) {
-    v.play().catch(() => {});
-    setIsPlaying(true);
-  } else {
-    v.pause();
-    setIsPlaying(false);
-  }
+      if (v.paused) {
+        v.play().catch(() => {});
+        setIsPlaying(true);
+      } else {
+        v.pause();
+        setIsPlaying(false);
+      }
 
-  lastTapRef.current = 0;
-}, 280);
-
+      lastTapRef.current = 0;
+    }, 280);
   };
 
   const handleKeyDown = (e) => {
@@ -513,7 +528,8 @@ videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
         }
       `}</style>
 
-      <div style={{ position: "relative", width: "100%", maxWidth: 420, height: "100%", display: "block" }}>
+      {/* Updated wrapper per request */}
+      <div style={{ position: "relative", width: "100%", height: "100%", maxWidth: "100%", overflow: "hidden" }}>
         <video
           ref={videoRef}
           src={videoUrl}
@@ -543,7 +559,8 @@ videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
           </div>
         )}
 
-        <div className="reel-actions" style={{ position: "absolute", right: 12, bottom: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 40 }} aria-hidden>
+        {/* Action buttons moved lower for phones (per request) */}
+        <div className="reel-actions" style={{ position: "absolute", right: 12, bottom: 120, display: "flex", flexDirection: "column", gap: 16, zIndex: 20 }} aria-hidden>
           <button
             onClick={(e) => { e.stopPropagation(); toggleLike(e); }}
             aria-pressed={liked}
@@ -602,8 +619,34 @@ videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
       </div>
 
       {commentsOpen && (
-        <div onClick={() => setCommentsOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, height: "55%", background: "#111", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div
+          onClick={() => setCommentsOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "stretch", // updated per request
+            justifyContent: "center"
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 720,
+              height: "100vh", // full-screen per request
+              background: "#111",
+              borderTopLeftRadius: 0,
+              borderTopRightRadius: 0,
+              padding: 16,
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch" // ensure inner elements stretch
+            }}
+          >
             <div style={{ textAlign: "center", marginBottom: 8 }}>
               <div style={{ width: 40, height: 4, background: "#444", margin: "0 auto", borderRadius: 4 }} />
             </div>
