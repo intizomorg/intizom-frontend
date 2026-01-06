@@ -2,15 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useContext } from "react";
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import {
-  Home,
-  Search,
-  Film,
-  MessageCircle,
-  PlusSquare,
-  User
+  Home, Search, Film, MessageCircle, PlusSquare, User
 } from "lucide-react";
 import "./instaSidebar.css";
 
@@ -24,46 +18,33 @@ const menu = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
 
   return (
     <aside className="insta-sidebar">
-      {/* BRAND */}
       <div className="insta-brand">
         <span className="brand-inti">inti</span>
         <span className="brand-zom">ZOM</span>
       </div>
 
-      {/* MENU */}
       <nav className="insta-menu">
         {menu.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`insta-item ${isActive ? "active" : ""}`}
-            >
-              <span className="insta-icon">
-                <Icon size={22} strokeWidth={1.6} />
-              </span>
+            <Link key={item.href} href={item.href} className={`insta-item ${isActive ? "active" : ""}`}>
+              <span className="insta-icon"><Icon size={22} strokeWidth={1.6} /></span>
               <span>{item.label}</span>
             </Link>
           );
         })}
 
-        {/* PROFILE */}
         <Link
-          href={user ? `/profile/${user.username}` : "/login"}
-          className={`insta-item ${
-            pathname === `/profile/${user?.username}` ? "active" : ""
-          }`}
+          href={user?.username ? `/profile/${user.username}` : "/login"}
+          className={`insta-item ${pathname === `/profile/${user?.username}` ? "active" : ""}`}
         >
-          <span className="insta-icon">
-            <User size={22} strokeWidth={1.6} />
-          </span>
+          <span className="insta-icon"><User size={22} strokeWidth={1.6} /></span>
           <span>Profile</span>
         </Link>
       </nav>
