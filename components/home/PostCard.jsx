@@ -515,18 +515,24 @@ function PostCard({ post, onDeleted }) {
     borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.03)",
     borderTopLeftRadius: isMobile ? 16 : 0,
     borderTopRightRadius: isMobile ? 16 : 0,
-    height: isMobile ? "72vh" : "100vh",
-    boxShadow: isMobile ? "0 -8px 24px rgba(0,0,0,0.6)" : "-8px 0 24px rgba(0,0,0,0.6)",
+    height: "100vh",
+borderTopLeftRadius: isMobile ? 0 : 0,
+borderTopRightRadius: isMobile ? 0 : 0,
+boxShadow: isMobile
+  ? "0 -12px 28px rgba(0,0,0,0.75)"
+  : "-8px 0 24px rgba(0,0,0,0.6)",
+
     display: "flex",
     flexDirection: "column",
     zIndex: 91,
     // 2) drawer transform: conditional slide-up on mobile, slide-right on desktop
     transform: commentsOpen
-      ? "translate(0,0)"
-      : isMobile
-      ? "translateY(100%)"
-      : "translateX(100%)",
-    transition: "transform 260ms cubic-bezier(.2,.8,.2,1)",
+  ? "translate(0,0)"
+  : isMobile
+    ? "translateY(100%)"
+    : "translateX(100%)",
+transition: "transform 280ms cubic-bezier(.22,.61,.36,1)",
+
     willChange: "transform",
   };
 
