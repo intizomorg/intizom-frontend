@@ -471,16 +471,17 @@ width: "100%",
       `}</style>
 
       <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          loop
-          playsInline
-          preload="metadata"
-          muted={reelsMuted}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", backgroundColor: "#000" }}
-          aria-hidden="false"
-        />
+       <div className="reel-video-wrap">
+  <video
+    ref={videoRef}
+    src={videoUrl}
+    className="reel-video"
+    playsInline
+    loop
+    muted={reelsMuted}
+  />
+</div>
+
 
         {/* mute/unmute */}
         <button

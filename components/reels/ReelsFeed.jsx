@@ -206,25 +206,7 @@ export default function ReelsFeed() {
 
   // Inject minimal CSS for svh fallback + scroll-snap
   // Note: inline <style> in component to keep single-file portability
-  const injectedStyles = `
-    .reels-feed {
-      height: 100svh;
-      height: 100vh; /* fallback */
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      scroll-snap-type: y mandatory;
-      scroll-behavior: smooth;
-      background: #000;
-    }
-    .reel-panel {
-      height: 100svh;
-      height: 100vh; /* fallback */
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
-      width: 100vw;
-      overflow: hidden;
-    }
-  `;
+
 
   return (
     <>
