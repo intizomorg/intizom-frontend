@@ -1,14 +1,12 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Better Call Odil – Kirish",
-  description: "Better Call Odil platformasiga kirish sahifasi",
-};
-
 "use client";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
+
+export const metadata = {
+  title: "Better Call Odil – Kirish",
+  description: "Better Call Odil platformasiga kirish sahifasi",
+};
 
 import { useState, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -27,14 +25,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
 
-  useEffect(() => {
-    const inti = document.querySelector(".logo-inti");
-    if (inti) {
-      inti.style.color = "#111111";
-    }
-  }, []);
+  useEffect(() => {}, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const res = await loginUser({ username, password });
 
