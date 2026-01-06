@@ -7,7 +7,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { Home, Search, Film, MessageCircle, Upload } from "lucide-react";
 
 const menu = [
-  { href: "/", label: "Home", icon: <Home size={24} /> },
+  { href: "/", label: "Odil", icon: <Home size={24} /> },
   { href: "/search", label: "Search", icon: <Search size={24} /> },
   { href: "/reels", label: "Reels", icon: <Film size={24} /> },
   { href: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
