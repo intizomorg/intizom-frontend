@@ -15,7 +15,7 @@ const menu = [
   { href: "/reels", label: "Reels", icon: "🎬" },
   { href: "/messages", label: "Messages", icon: "B" },
   { href: "/notifications", label: "Notifications", icon: "❤️" },
-  { href: "/upload", label: "Create", icon: "➕" },
+  { href: "/upload", label: "Create", icon: "Ba" },
 ];
 
 function LeftNav() {
