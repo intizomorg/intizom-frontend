@@ -7,7 +7,7 @@ import { AuthContext } from "@/context/AuthContext";
 import "./instaSidebar.css";
 
 const menu = [
-  { href: "/", label: "Home", icon: "⌂" },
+  { href: "/", label: "Home", icon: "a" },
   { href: "/search", label: "Search", icon: "⌕" },
   { href: "/reels", label: "Reels", icon: "▶" },
   { href: "/messages", label: "Messages", icon: "✉" },
