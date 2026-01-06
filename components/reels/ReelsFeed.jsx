@@ -1,63 +1,56 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReelItem from "./ReelItem";
 
 /**
- * ReelsFeed — production-ready infinite reels feed
- * Fixes applied:
- *  - NEXT_PUBLIC_API_URL is required (no silent localhost fallback)
- *  - Pagination state reset on mount
- *  - Robust backend-shape normalization (posts | array)
- *  - hasMore race-condition fixed with hasMoreRef
- *  - IntersectionObserver tuned with rootMargin to avoid spammy triggers
- *  - Stop fetching when backend returns empty page (avoid infinite loop)
- *
- * Additional desktop wheel fix:
- *  - locks wheel-based scrolling so each wheel action moves exactly one reel
- *  - removes scroll-snap to avoid conflicts with inertial desktop scroll
+ * ReelsFeed — final, production-ready feed
+ * - Requires process.env.NEXT_PUBLIC_API_URL (no fallback)
+ * - Uses scroll-snap + 100svh for consistent fullscreen
+ * - Robust pagination with refs to avoid races
+ * - Sentinel observed with IntersectionObserver (rootMargin to prefetch)
  */
 
 export default function ReelsFeed() {
-  // --- API must be explicitly provided in environment ---
-  const API = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  // --- API must be explicitly provided ---
+  const API = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
+    ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
+    : "";
+
   if (!API) {
-    // Fail fast in production/dev so frontend doesn't silently call localhost
+    // Fail fast: avoid silent localhost fallback
     throw new Error("NEXT_PUBLIC_API_URL is not set. Please set it in your environment.");
   }
 
   const [reels, setReels] = useState([]);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
 
-  const observerRef = useRef(null);
-  const loadMoreRef = useRef(null);
-
-  // refs to avoid closure-related race conditions inside fetch/observer
+  // mutable refs to avoid closure races
   const fetchingRef = useRef(false);
   const hasMoreRef = useRef(true);
+  const pageRef = useRef(1);
 
-  // --- Desktop wheel locking refs ---
-  const scrollingRef = useRef(false);
+  // sentinel + observer refs
+  const loadMoreRef = useRef(null);
+  const observerRef = useRef(null);
   const feedRef = useRef(null);
 
-  // keep hasMoreRef synced with hasMore state
-  useEffect(() => {
-    hasMoreRef.current = hasMore;
-  }, [hasMore]);
+  // keep refs in sync with state
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { pageRef.current = page; }, [page]);
 
   /**
    * fetchReels(pageNum)
-   * - uses fetchingRef and hasMoreRef to avoid races
-   * - normalizes backend shapes (data.posts | data)
+   * - prevents concurrent fetches with fetchingRef
+   * - normalizes backend shapes (posts | array)
    * - maps _id -> id and filters only valid video posts
-   * - stops and sets hasMore=false when backend returns empty page
+   * - stops when backend returns empty page
    */
   const fetchReels = useCallback(
-    async (pageNum) => {
-      // protect against concurrent fetches and if no more pages
+    async (pageNum = 1) => {
       if (fetchingRef.current || !hasMoreRef.current) return;
 
       fetchingRef.current = true;
@@ -68,31 +61,29 @@ export default function ReelsFeed() {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        const res = await fetch(`${API}/posts/reels?page=${pageNum}&limit=5`, { headers });
+        const res = await fetch(`${API}/posts/reels?page=${pageNum}&limit=6`, { headers });
 
         if (!res.ok) {
           throw new Error("HTTP " + res.status);
         }
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
-        // --- Robust normalization for different backend shapes (per request) ---
         const rawList = Array.isArray(data.posts)
           ? data.posts
           : Array.isArray(data)
           ? data
           : [];
 
-        // Map ids and include explicit normalized fields (liked, likesCount, views)
-        // IMPORTANT: prefer `username` from backend when available to avoid "user" fallback.
         const onlyVideos = rawList
           .map((p) => ({
             ...p,
-            id: String(p._id || p.id),
-            user: p.username || p.user, // 🔥 MUHIM: prefer username field when present
+            id: String(p._id ?? p.id ?? ""),
+            // prefer username when available (avoid "user" fallback)
+            user: p.username ?? p.user,
             liked: Boolean(p.liked),
-            likesCount: Number(p.likesCount || 0),
-            views: Number(p.views || 0),
+            likesCount: Number(p.likesCount ?? p.likes ?? 0),
+            viewsCount: Number(p.viewsCount ?? p.views ?? 0),
           }))
           .filter(
             (p) =>
@@ -102,48 +93,43 @@ export default function ReelsFeed() {
               p.media[0]?.url
           );
 
-        // If backend returned no items on this page -> stop further fetching
+        // If no items returned -> stop further fetching
         if (onlyVideos.length === 0) {
-          // ensure both state and ref updated
           setHasMore(false);
           hasMoreRef.current = false;
-          // if this was the first page, also clear reels (already done on mount but keep safe)
-          if (pageNum === 1) {
-            setReels([]);
-          }
+          // if first page returned empty, ensure reels cleared
+          if (pageNum === 1) setReels([]);
           return;
         }
 
-        // Merge with existing reels while avoiding duplicates (preserve existing comments etc.)
+        // merge while preserving existing entries (avoid duplicates)
         setReels((prev) => {
-          const map = new Map(prev.map((p) => [p.id, p]));
-          // Append new items at the end in the order received
+          const map = new Map(prev.map((r) => [r.id, r]));
           onlyVideos.forEach((p) => {
             if (map.has(p.id)) {
               const old = map.get(p.id);
-              map.set(p.id, {
-                ...old,
-                ...p,
-                // keep old comments if they exist
-                comments: old.comments ?? p.comments ?? [],
-              });
+              map.set(p.id, { ...old, ...p, comments: old.comments ?? p.comments ?? [] });
             } else {
               map.set(p.id, p);
             }
           });
+          // preserve original order: previous items followed by new page items
+          // but ensure we return values in insertion order the map maintains
           return Array.from(map.values());
         });
 
-        // Respect backend hasMore but keep defensive about empty pages
+        // backend provided hint about more pages
         const backendHasMore = Boolean(data.hasMore);
         const newHasMore = backendHasMore && onlyVideos.length > 0;
         setHasMore(newHasMore);
         hasMoreRef.current = newHasMore;
 
-        // advance page for next fetch
-        setPage(pageNum + 1);
-      } catch (e) {
-        console.error("REELS FETCH ERROR:", e);
+        // advance page
+        const next = pageNum + 1;
+        setPage(next);
+        pageRef.current = next;
+      } catch (err) {
+        console.error("Reels fetch error:", err);
         setError("Reels yuklanmadi. Internet yoki serverni tekshiring.");
       } finally {
         fetchingRef.current = false;
@@ -153,126 +139,137 @@ export default function ReelsFeed() {
     [API]
   );
 
-  // Reset pagination & load first page on mount (important to avoid stale state)
+  // Reset pagination & load first page on mount
   useEffect(() => {
-    // reset before first load
     setReels([]);
     setPage(1);
+    pageRef.current = 1;
     setHasMore(true);
     hasMoreRef.current = true;
     setError(null);
 
+    // initial load
     fetchReels(1);
     // fetchReels is stable via useCallback (depends only on API)
   }, [fetchReels]);
 
-  // IntersectionObserver for infinite scroll
+  // IntersectionObserver: observe sentinel (loadMoreRef) to fetch next page
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
 
-    // disconnect previous observer
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
+    // disconnect previous
+    observerRef.current?.disconnect();
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
         if (!e) return;
-
-        // don't call fetch if already fetching or no more pages
         if (!e.isIntersecting) return;
         if (fetchingRef.current) return;
         if (!hasMoreRef.current) return;
 
-        // fetch current page
-        fetchReels(page);
+        // fetch current page (use pageRef to avoid stale closure)
+        fetchReels(pageRef.current);
       },
-      // Use large rootMargin to reduce mobile spamming of fetch calls
-      { root: null, rootMargin: "300px", threshold: 0 }
+      {
+        root: null,
+        // prefetch sooner to avoid visible loading
+        rootMargin: "600px",
+        threshold: 0,
+      }
     );
 
     observerRef.current.observe(el);
 
     return () => observerRef.current?.disconnect();
-    // note: we intentionally don't include 'page' in deps to avoid reconnect churn; fetchReels reads page param we pass in
-  }, [fetchReels, /* loadMoreRef wiring is stable */]);
+  }, [fetchReels]);
 
-  if (error) {
-    return (
-      <div style={{ color: "#f87171", textAlign: "center", marginTop: 40 }}>
-        {error}
-      </div>
-    );
-  }
+  // Optional: keyboard navigation for accessibility (ArrowDown / ArrowUp)
+  const handleKeyDown = (e) => {
+    if (!feedRef.current) return;
 
-  // Wheel handler: lock wheel scrolling so each wheel action advances exactly one reel
-  const handleWheel = (e) => {
-    // ignore when already animating
-    if (scrollingRef.current) return;
-
-    // small deltas shouldn't trigger a scroll
-    if (Math.abs(e.deltaY) < 5) return;
-
-    scrollingRef.current = true;
-
-    const delta = e.deltaY;
-    const direction = delta > 0 ? 1 : -1;
-
-    // scroll by exactly one viewport height
-    feedRef.current?.scrollBy({
-      top: direction * window.innerHeight,
-      behavior: "smooth",
-    });
-
-    // unlock after animation (tweak timeout if needed)
-    setTimeout(() => {
-      scrollingRef.current = false;
-    }, 600);
+    if (e.key === "ArrowDown" || e.key === "PageDown") {
+      e.preventDefault();
+      feedRef.current.scrollBy({ top: window.innerHeight, behavior: "smooth" });
+    } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+      e.preventDefault();
+      feedRef.current.scrollBy({ top: -window.innerHeight, behavior: "smooth" });
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      feedRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (e.key === "End") {
+      e.preventDefault();
+      feedRef.current.scrollTo({ top: feedRef.current.scrollHeight, behavior: "smooth" });
+    }
   };
 
+  // Inject minimal CSS for svh fallback + scroll-snap
+  // Note: inline <style> in component to keep single-file portability
+  const injectedStyles = `
+    .reels-feed {
+      height: 100svh;
+      height: 100vh; /* fallback */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+      background: #000;
+    }
+    .reel-panel {
+      height: 100svh;
+      height: 100vh; /* fallback */
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      width: 100vw;
+      overflow: hidden;
+    }
+  `;
+
   return (
-    <div
-      ref={feedRef}
-      className="reels-feed"
-      onWheel={handleWheel}
-      style={{
-        height: "100vh",
-        overflowY: "hidden", // hide native scroll to avoid inertial multi-item jumps on desktop
-        backgroundColor: "#000",
-      }}
-    >
-      {reels.length === 0 && !loading ? (
-        <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
-          Hozircha hech qanday reel yo'q.
+    <>
+      <style>{injectedStyles}</style>
+
+      {error ? (
+        <div style={{ color: "#f87171", textAlign: "center", marginTop: 40 }}>
+          {error}
         </div>
       ) : (
-        reels.map((post) => (
+        <div
+          ref={feedRef}
+          className="reels-feed"
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          aria-label="Reels feed"
+          style={{ outline: "none" }}
+        >
+          {reels.length === 0 && !loading ? (
+            <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
+              Hozircha hech qanday reel yo'q.
+            </div>
+          ) : (
+            reels.map((post) => (
+              <div key={post.id} className="reel-panel" aria-hidden={false}>
+                <ReelItem post={post} />
+              </div>
+            ))
+          )}
+
+          {/* sentinel element observed by IntersectionObserver */}
           <div
-            key={post.id}
+            ref={loadMoreRef}
             style={{
-              height: "100vh",
+              height: 120,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#777",
             }}
           >
-            <ReelItem post={post} />
+            {loading ? "Loading more reels…" : hasMore ? "" : "No more reels"}
           </div>
-        ))
+        </div>
       )}
-
-      {/* sentinel element observed by IntersectionObserver */}
-      <div
-        ref={loadMoreRef}
-        style={{
-          height: 80,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#777",
-        }}
-      >
-        {loading ? "Loading more reels…" : hasMore ? "" : "No more reels"}
-      </div>
-    </div>
+    </>
   );
 }
