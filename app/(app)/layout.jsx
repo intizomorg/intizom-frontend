@@ -1,21 +1,19 @@
 "use client";
 
-import Sidebar from "@/components/nav/Sidebar";
-import BottomNav from "@/components/nav/BottomNav";
-import { usePathname } from "next/navigation";
 import AuthProvider from "@/context/AuthContext";
+import Sidebar from "@/components/nav/Sidebar";
 
 export default function AppLayout({ children }) {
-  const pathname = usePathname();
-
-  const hideNav =
-    pathname.startsWith("/login") || pathname.startsWith("/register");
-
   return (
     <AuthProvider>
-      {!hideNav && <Sidebar />}
-      {!hideNav && <BottomNav />}
-      <main className="app-main">{children}</main>
+      <div className="flex bg-black text-white min-h-screen">
+        <Sidebar />
+
+        {/* 🔥 FAQAT SHU YER SCROLL BO‘LADI */}
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </AuthProvider>
   );
 }
