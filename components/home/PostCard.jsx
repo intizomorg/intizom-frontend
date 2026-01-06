@@ -484,62 +484,47 @@ function PostCard({ post, onDeleted }) {
   // ------------------------
   // Overlay & drawer styles
   // ------------------------
+
+  // 1️⃣ overlayStyle — replaced per your instruction
   const overlayStyle = {
     position: "fixed",
     inset: 0,
     zIndex: 90,
     display: "flex",
-    // 1) overlay container always bottom-aligned
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    // control interactivity & fade
+    flexDirection: isMobile ? "column" : "row",
+    justifyContent: isMobile ? "flex-end" : "flex-end",
+    alignItems: isMobile ? "stretch" : "stretch",
     pointerEvents: commentsOpen ? "auto" : "none",
-    opacity: commentsOpen ? 1 : 0,
-    transition: "opacity 220ms ease",
+    background: commentsOpen ? "rgba(0,0,0,0.55)" : "transparent",
+    transition: "background 220ms ease",
   };
 
-  const backdropStyle = {
-    width: "100%",
-    maxWidth: "100%",
-    // backdrop fades in/out with overlay
-    background: "rgba(0,0,0,0.55)",
-    transition: "opacity 220ms ease",
-    opacity: commentsOpen ? 1 : 0,
-  };
+  // 2️⃣ backdropStyle removed entirely (per your instruction)
 
-  // Drawer style with conditional transform and cubic-bezier transition
+  // 3️⃣ drawerStyle — replaced per your instruction
   const drawerStyle = {
     width: isMobile ? "100%" : "92%",
     maxWidth: isMobile ? "100%" : 420,
+    height: "100vh",
     background: "#0b0b0b",
     borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.03)",
-    borderTopLeftRadius: isMobile ? 16 : 0,
-    borderTopRightRadius: isMobile ? 16 : 0,
-    height: "100vh",
-borderTopLeftRadius: isMobile ? 0 : 0,
-borderTopRightRadius: isMobile ? 0 : 0,
-boxShadow: isMobile
-  ? "0 -12px 28px rgba(0,0,0,0.75)"
-  : "-8px 0 24px rgba(0,0,0,0.6)",
-
+    boxShadow: isMobile
+      ? "0 -12px 28px rgba(0,0,0,0.75)"
+      : "-8px 0 24px rgba(0,0,0,0.6)",
     display: "flex",
     flexDirection: "column",
     zIndex: 91,
-    // 2) drawer transform: conditional slide-up on mobile, slide-right on desktop
-    transform: commentsOpen
-  ? "translate(0,0)"
-  : isMobile
-    ? "translateY(100%)"
-    : "translateX(100%)",
-transition: "transform 280ms cubic-bezier(.22,.61,.36,1)",
 
-    willChange: "transform",
+    transform: commentsOpen
+      ? "translate(0,0)"
+      : isMobile
+        ? "translateY(100%)"
+        : "translateX(100%)",
+
+    transition: "transform 300ms cubic-bezier(.22,.61,.36,1)",
   };
 
-  // Additional inline safety: if you prefer the explicit desktop-only override:
-  // if (!isMobile) {
-  //   drawerStyle.transform = commentsOpen ? "translateX(0)" : "translateX(100%)";
-  // }
+  // ------------------------
 
   return (
     <article className="post-card" onContextMenu={(e) => e.preventDefault()}>
@@ -808,17 +793,9 @@ transition: "transform 280ms cubic-bezier(.22,.61,.36,1)",
         className="comments-overlay"
         role="dialog"
         aria-modal="true"
-        aria-hidden={!commentsOpen}
         style={overlayStyle}
         onClick={() => commentsOpen && setCommentsOpen(false)}
       >
-        {/* Backdrop (left area) */}
-        <div
-          aria-hidden
-          style={backdropStyle}
-        />
-
-        {/* Drawer panel */}
         <aside
           className="comments-drawer"
           onClick={(e) => e.stopPropagation()}
