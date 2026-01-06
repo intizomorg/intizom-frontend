@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { ReactNode } from "react";
+import { headers } from "next/headers";
 
 export const metadata = {
   title: "intiZOM",
@@ -13,10 +13,15 @@ export const viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }) {
+  const h = headers();
+  const pathname = h.get("x-pathname") || "";
+
+  const bodyClass = pathname.startsWith("/reels") ? "page--reels" : "";
+
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={bodyClass}>{children}</body>
     </html>
   );
 }

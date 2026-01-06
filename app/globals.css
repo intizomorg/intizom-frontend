@@ -336,9 +336,6 @@ body {
 
 /* ================= REELS (FINAL & SAFE) ================= */
 
-
-
-
 .app-shell {
   height: 100vh;
   width: 100vw;
@@ -368,10 +365,6 @@ body {
     object-fit: contain;
   }
 }
-body {
-  overflow: hidden;
-}
-
 
 
 /* 🔴 MUAMMO SHU YERDA EDI — HOZIR TUZATILDI */
@@ -905,10 +898,37 @@ body {
 
 /* ===== Replacement: safer, full-viewport reels layout (appended as requested) ===== */
 
-.reels-feed {
+/* ================= IMPORTANT: fix for double-scroll problem ================
+   Strategy (recommended):
+   1) Prefer route-scoped override: when on Reels route add a class to <body>
+      e.g. <body class="page--reels"> and then the rules below ensure:
+        - .app-main WILL NOT scroll on Reels page
+        - .reels-feed is the only scroll container (100vh)
+   2) If you cannot add a route class, you may enable the global fallback below,
+      but beware it may affect other screens (home feed).
+======================================================================== */
+
+/* ---------- Route-scoped (preferred) ---------- */
+/* Activate on Reels pages only — safest */
+body.page--reels .app-main {
+  height: auto;
+  overflow: visible;
+  -webkit-overflow-scrolling: auto;
+}
+
+body.page--reels .app-shell {
   height: 100vh;
   width: 100vw;
-  overflow-y: scroll;
+  overflow: hidden;
+  background: #000;
+}
+
+/* reels feed is the single scroll container on Reels page */
+body.page--reels .reels-feed {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto; /* use auto so overlays can allow pointer-events; change to scroll if you prefer always-visible scrollbar */
+  -webkit-overflow-scrolling: touch;
   scroll-snap-type: y mandatory;
   display: flex;
   flex-direction: column;
@@ -916,7 +936,8 @@ body {
   background: black;
 }
 
-.reel-panel {
+/* each panel full viewport height and snap */
+body.page--reels .reel-panel {
   scroll-snap-align: start;
   height: 100vh;
   width: 100%;
@@ -925,7 +946,8 @@ body {
   align-items: center;
 }
 
-.reel-item {
+/* reel item sizing */
+body.page--reels .reel-item {
   height: 100vh;
   width: 100%;
   max-width: 430px;
@@ -935,12 +957,13 @@ body {
   overflow: hidden;
 }
 
-.reel-video-wrap {
+/* inner wraps (keeps previous rules) */
+body.page--reels .reel-video-wrap {
   position: absolute;
   inset: 0;
 }
 
-.reel-video {
+body.page--reels .reel-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -948,10 +971,36 @@ body {
 
 /* DESKTOP / LANDSCAPE */
 @media (min-aspect-ratio: 1/1) {
-  .reel-item {
+  body.page--reels .reel-item {
     max-width: 480px;
   }
-  .reel-video {
+  body.page--reels .reel-video {
     object-fit: contain;
   }
 }
+
+/* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
+   Uncomment to force .app-main to stop scrolling across the whole app.
+   WARNING: this may affect other pages that expected .app-main to be the scroll container.
+------------------------------------------------------------------------------ */
+/*
+.app-main {
+  height: auto !important;
+  overflow: visible !important;
+  -webkit-overflow-scrolling: auto !important;
+}
+
+.reels-feed {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: black;
+}
+*/
+
+/* ================= END of Reels fixes ================= */

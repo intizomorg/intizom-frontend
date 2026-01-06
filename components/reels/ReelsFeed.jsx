@@ -12,14 +12,28 @@ import ReelItem from "./ReelItem";
  */
 
 export default function ReelsFeed() {
+  // add page-level body class while this component is mounted
+  useEffect(() => {
+    document.body.classList.add("page--reels");
+    return () => {
+      document.body.classList.remove("page--reels");
+    };
+  }, []);
+
   // --- API must be explicitly provided ---
   const API = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
     ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
     : "";
 
   if (!API) {
-    // Fail fast: avoid silent localhost fallback
-    throw new Error("NEXT_PUBLIC_API_URL is not set. Please set it in your environment.");
+    // Don't throw inside a client component (this would crash the entire client-side UI).
+    // Instead render a visible error message so the app stays usable.
+    return (
+      <div style={{ padding: 24, color: "#f87171", textAlign: "center" }}>
+        Konfiguratsiya xatosi: NEXT_PUBLIC_API_URL sozlanmagan.
+        Iltimos, muhit o‘zgaruvchilarini tekshiring.
+      </div>
+    );
   }
 
   const [reels, setReels] = useState([]);
@@ -161,6 +175,10 @@ export default function ReelsFeed() {
     // disconnect previous
     observerRef.current?.disconnect();
 
+    // Use the feed DOM node as the intersection root (so sentinel triggers when feed scrolls)
+    const rootEl = feedRef.current || null;
+    if (!rootEl) return;
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
@@ -169,12 +187,10 @@ export default function ReelsFeed() {
         if (fetchingRef.current) return;
         if (!hasMoreRef.current) return;
 
-        // fetch current page (use pageRef to avoid stale closure)
         fetchReels(pageRef.current);
       },
       {
-        root: null,
-        // prefetch sooner to avoid visible loading
+        root: rootEl,
         rootMargin: "600px",
         threshold: 0,
       }

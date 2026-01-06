@@ -180,6 +180,12 @@ export default function ReelItem({ post }) {
     const container = containerRef.current;
     if (!v || !container) return;
 
+    // try to find the nearest scroll container for reliable intersection detection
+    const rootElement =
+      (container && container.closest && container.closest(".reels-feed")) ||
+      document.querySelector(".reels-feed") ||
+      null;
+
     const io = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
@@ -225,7 +231,7 @@ export default function ReelItem({ post }) {
           }
         }
       },
-      { threshold: 0.6 }
+      { root: rootElement, threshold: 0.6 }
     );
 
     io.observe(container);
