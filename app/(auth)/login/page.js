@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useState, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/api";
@@ -8,14 +11,15 @@ import "./login.css";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useContext(AuthContext);
+  const ctx = useContext(AuthContext);
+  if (!ctx) return null;
+  const { setUser } = ctx;
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 👁️ yangi state
+  const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
 
-  // 🔴 MUHIM: browser BACK bug'ini yopadi
   useEffect(() => {
     const inti = document.querySelector(".logo-inti");
     if (inti) {
@@ -54,8 +58,6 @@ export default function LoginPage() {
   return (
     <div className="page">
       <div className="container">
-
-        {/* LEFT IMAGE */}
         <div className="left">
           <div className="phone-frame">
             <img
@@ -71,10 +73,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* RIGHT LOGIN */}
         <div className="right">
           <div className="login-box">
-
             <h1 className="logo">
               <span className="logo-inti">inti</span>
               <span className="logo-zom">ZOM</span>
@@ -88,7 +88,6 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
               />
 
-              {/* 👁️ PAROL + KO‘RISH TUGMASI */}
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -128,24 +127,17 @@ export default function LoginPage() {
               <span></span>
             </div>
 
-            <p
-              className="forgot"
-              onClick={() => router.push("/register")}
-            >
+            <p className="forgot" onClick={() => router.push("/register")}>
               Parolni unutdingizmi?
             </p>
           </div>
 
           <div className="signup-box">
             <p className="signup-text">Akkauntingiz yo‘qmi?</p>
-            <p
-              className="signup"
-              onClick={() => router.push("/register")}
-            >
+            <p className="signup" onClick={() => router.push("/register")}>
               Ro‘yxatdan o‘tish
             </p>
           </div>
-
         </div>
       </div>
     </div>
