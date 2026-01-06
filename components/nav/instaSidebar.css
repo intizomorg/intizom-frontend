@@ -130,3 +130,25 @@
 .brand-zom {
   color: #8F00FF;
 }
+@media (max-width: 1023px) {
+
+  .bottom-nav-item {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+  }
+
+  .bottom-nav-icon {
+    width: 26px;
+    height: 26px;
+    stroke-width: 1.8;
+  }
+
+  .bottom-nav-item.active {
+    color: #fff;
+  }
+
+}

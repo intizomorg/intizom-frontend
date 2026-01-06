@@ -4,14 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { Home, Search, Film, MessageCircle, Upload } from "lucide-react";
+import {
+  Home,
+  Search,
+  Film,
+  MessageCircle,
+  User
+} from "lucide-react";
 
 const menu = [
-  { href: "/", label: "Odil", icon: <Home size={24} /> },
-  { href: "/search", label: "Search", icon: <Search size={24} /> },
-  { href: "/reels", label: "Reels", icon: <Film size={24} /> },
-  { href: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
-  { href: "/uploaddAS", label: "Upload", icon: <Upload size={24} /> },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/search", label: "Search", icon: Search },
+  { href: "/reels", label: "Reels", icon: Film },
+  { href: "/messages", label: "Messages", icon: MessageCircle },
+  { href: "PROFILE", label: "Profile", icon: User },
 ];
 
 export default function BottomNav() {
@@ -19,40 +25,32 @@ export default function BottomNav() {
   const { user } = useContext(AuthContext);
 
   return (
-    <nav
-      className="
-        bottom-nav
-        fixed bottom-0 left-0 right-0
-        flex justify-around items-center
-        h-14
-        bg-black border-t border-zinc-800
-        md:hidden
-        z-50
-      "
-    >
+    <nav className="bottom-nav md:hidden">
       {menu.map((item) => {
-        const active = pathname === item.href;
+        const href =
+          item.href === "PROFILE"
+            ? user
+              ? `/profile/${user.username}`
+              : "/login"
+            : item.href;
+
+        const active =
+          item.href === "PROFILE"
+            ? pathname === `/profile/${user?.username}`
+            : pathname === item.href;
+
+        const Icon = item.icon;
 
         return (
           <Link
-            key={item.href}
-            href={item.href}
-            className={`text-2xl ${active ? "text-white" : "text-zinc-400"}`}
+            key={item.label}
+            href={href}
+            className={`bottom-nav-item ${active ? "active" : ""}`}
           >
-            {item.icon}
+            <Icon className="bottom-nav-icon" />
           </Link>
         );
       })}
-
-      {/* DYNAMIC PROFILE LINK */}
-      <Link
-        href={user ? `/profile/${user.username}` : "/login"}
-        className={`text-2xl ${
-          pathname === `/profile/${user?.username}` ? "text-white" : "text-zinc-400"
-        }`}
-      >
-        👤
-      </Link>
     </nav>
   );
 }
