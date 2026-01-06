@@ -3,6 +3,12 @@
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
+export const metadata = {
+  title: "Kirish | intiZOM",
+  description:
+    "intiZOM ijtimoiy tarmog‘iga kirish sahifasi. Profilingizga kiring va motivatsiyangizni boshlang.",
+};
+
 import { useState, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/api";
@@ -22,9 +28,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const inti = document.querySelector(".logo-inti");
-    if (inti) {
-      inti.style.color = "#111111";
-    }
+    if (inti) inti.style.color = "#111111";
   }, []);
 
   const handleSubmit = async (e) => {
@@ -51,7 +55,7 @@ export default function LoginPage() {
 
       router.push("/");
     } else {
-      setMsg(res.msg);
+      setMsg(res.msg || "Login amalga oshmadi");
     }
   };
 
@@ -100,13 +104,13 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
                     position: "absolute",
-                    right: "10px",
+                    right: 10,
                     top: "50%",
                     transform: "translateY(-50%)",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    fontSize: "14px",
+                    fontSize: 14,
                     color: "#555",
                   }}
                 >
