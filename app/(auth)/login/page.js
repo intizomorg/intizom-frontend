@@ -75,10 +75,11 @@ export default function LoginPage() {
 
         <div className="right">
           <div className="login-box">
-            <h1 className="logo">
+            <div className="logo">
+
               <span className="logo-inti">inti</span>
               <span className="logo-zom">ZOM</span>
-            </h1>
+            </div>
 
             <form onSubmit={handleSubmit}>
               <input
