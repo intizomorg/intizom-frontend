@@ -451,8 +451,9 @@ export default function ReelItem({ post }) {
       aria-label={`Reel by ${usernameStr || "user"}: ${post.title || ""}`}
       style={{
         position: "relative",
-        height: "100svh",
-        width: "100vw",
+        height: "100%",
+width: "100%",
+
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
