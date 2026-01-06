@@ -11,7 +11,7 @@ const menu = [
   { href: "/search", label: "Search", icon: <Search size={24} /> },
   { href: "/reels", label: "Reels", icon: <Film size={24} /> },
   { href: "/messages", label: "Messages", icon: <MessageCircle size={24} /> },
-  { href: "/upload", label: "Upload", icon: <Upload size={24} /> },
+  { href: "/uploaddAS", label: "Upload", icon: <Upload size={24} /> },
 ];
 
 export default function BottomNav() {
