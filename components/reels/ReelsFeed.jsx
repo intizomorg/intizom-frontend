@@ -227,37 +227,39 @@ export default function ReelsFeed() {
           {error}
         </div>
       ) : (
-        <div
-          ref={feedRef}
-          className="reels-feed"
-          onKeyDown={handleKeyDown}
-          tabIndex={0}
-          aria-label="Reels feed"
-        >
-          {reels.length === 0 && !loading ? (
-            <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
-              Hozircha hech qanday reel yo'q.
-            </div>
-          ) : (
-            reels.map((post) => (
-              <div key={post.id} className="reel-panel" aria-hidden={false}>
-                <ReelItem post={post} />
-              </div>
-            ))
-          )}
-
-          {/* sentinel element observed by IntersectionObserver */}
+        <div className="reels-viewport">
           <div
-            ref={loadMoreRef}
-            style={{
-              height: 120,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#777",
-            }}
+            ref={feedRef}
+            className="reels-feed"
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+            aria-label="Reels feed"
           >
-            {loading ? "Loading more reels…" : hasMore ? "" : "No more reels"}
+            {reels.length === 0 && !loading ? (
+              <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
+                Hozircha hech qanday reel yo'q.
+              </div>
+            ) : (
+              reels.map((post) => (
+                <div key={post.id} className="reel-panel" aria-hidden={false}>
+                  <ReelItem post={post} />
+                </div>
+              ))
+            )}
+
+            {/* sentinel element observed by IntersectionObserver */}
+            <div
+              ref={loadMoreRef}
+              style={{
+                height: 120,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#777",
+              }}
+            >
+              {loading ? "Loading more reels…" : hasMore ? "" : "No more reels"}
+            </div>
           </div>
         </div>
       )}

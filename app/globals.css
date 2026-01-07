@@ -1119,6 +1119,72 @@ body.page--reels .reel-video {
 .mobile-brand .zom {
   color: #8F00FF !important;
 }
+/* ================= FINAL YOUTUBE-LIKE REELS LAYOUT ================= */
+
+/* sidebar joy egallamasligi uchun */
+body.page--reels .sidebar,
+body.page--reels .left-nav {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 72px;
+  height: 100vh;
+  z-index: 30;
+}
+
+/* reels viewport – markazlangan layer */
+body.page--reels .reels-viewport {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  background: #000;
+}
+
+/* reels-feed – faqat bitta scroll konteyner */
+body.page--reels .reels-feed {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+body.page--reels .reels-feed::-webkit-scrollbar {
+  display: none;
+}
+
+/* har bir reel panel */
+body.page--reels .reel-panel {
+  height: 100dvh;
+  scroll-snap-align: start;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* reel card */
+body.page--reels .reel-item {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 9 / 16;
+  height: 100%;
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* desktop landscape */
+@media (min-aspect-ratio: 1/1) {
+  body.page--reels .reel-item {
+    max-width: 460px;
+  }
+  body.page--reels .reel-video {
+    object-fit: contain;
+  }
+}
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
    Uncomment to force .app-main to stop scrolling across the whole app.
