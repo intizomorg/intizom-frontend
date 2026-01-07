@@ -3,16 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReelItem from "./ReelItem";
 
-/**
- * ReelsFeed — production-ready feed
- * - Expects NEXT_PUBLIC_API_URL to be set (renders friendly message if not)
- * - Uses scroll-snap + 100svh for consistent fullscreen
- * - Robust pagination with refs to avoid races
- * - Sentinel observed with IntersectionObserver using the feed DOM node as root
- */
-
 export default function ReelsFeed() {
-  // add page-level body class while this component is mounted
   useEffect(() => {
     document.body.classList.add("page--reels");
     return () => {
@@ -20,14 +11,12 @@ export default function ReelsFeed() {
     };
   }, []);
 
-  // --- API must be explicitly provided ---
   const API =
     typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
       ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
       : "";
 
   if (!API) {
-    // Friendly fallback UI instead of throwing (throws crash the client)
     return (
       <div style={{ padding: 24, color: "#f87171", textAlign: "center" }}>
         Konfiguratsiya xatosi: NEXT_PUBLIC_API_URL sozlanmagan.
@@ -42,17 +31,13 @@ export default function ReelsFeed() {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
 
-  // mutable refs to avoid closure races
   const fetchingRef = useRef(false);
   const hasMoreRef = useRef(true);
   const pageRef = useRef(1);
-
-  // sentinel + observer refs
   const loadMoreRef = useRef(null);
   const observerRef = useRef(null);
   const feedRef = useRef(null);
 
-  // keep refs in sync with state
   useEffect(() => {
     hasMoreRef.current = hasMore;
   }, [hasMore]);
@@ -60,13 +45,6 @@ export default function ReelsFeed() {
     pageRef.current = page;
   }, [page]);
 
-  /**
-   * fetchReels(pageNum)
-   * - prevents concurrent fetches with fetchingRef
-   * - normalizes backend shapes (posts | array)
-   * - maps _id -> id and filters only valid video posts
-   * - stops when backend returns empty page
-   */
   const fetchReels = useCallback(
     async (pageNum = 1) => {
       if (fetchingRef.current || !hasMoreRef.current) return;
@@ -110,7 +88,6 @@ export default function ReelsFeed() {
             (p) => p.id && p.type === "video" && Array.isArray(p.media) && p.media[0]?.url
           );
 
-        // If no items returned -> stop further fetching
         if (onlyVideos.length === 0) {
           setHasMore(false);
           hasMoreRef.current = false;
@@ -118,7 +95,6 @@ export default function ReelsFeed() {
           return;
         }
 
-        // merge while preserving existing entries (avoid duplicates)
         setReels((prev) => {
           const map = new Map(prev.map((r) => [r.id, r]));
           onlyVideos.forEach((p) => {
@@ -132,13 +108,11 @@ export default function ReelsFeed() {
           return Array.from(map.values());
         });
 
-        // backend provided hint about more pages
         const backendHasMore = Boolean(data.hasMore);
         const newHasMore = backendHasMore && onlyVideos.length > 0;
         setHasMore(newHasMore);
         hasMoreRef.current = newHasMore;
 
-        // advance page
         const next = pageNum + 1;
         setPage(next);
         pageRef.current = next;
@@ -153,7 +127,6 @@ export default function ReelsFeed() {
     [API]
   );
 
-  // Reset pagination & load first page on mount
   useEffect(() => {
     setReels([]);
     setPage(1);
@@ -162,20 +135,14 @@ export default function ReelsFeed() {
     hasMoreRef.current = true;
     setError(null);
 
-    // initial load
     fetchReels(1);
-    // fetchReels is stable via useCallback (depends only on API)
   }, [fetchReels]);
 
-  // IntersectionObserver: observe sentinel (loadMoreRef) to fetch next page
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
 
-    // disconnect previous
     observerRef.current?.disconnect();
-
-    // Use the feed DOM node as the intersection root (so sentinel triggers when feed scrolls)
     const rootEl = feedRef.current || null;
     if (!rootEl) return;
 
@@ -191,8 +158,7 @@ export default function ReelsFeed() {
       },
       {
         root: rootEl,
-        rootMargin: "600px",
-        threshold: 0,
+        threshold: 0.92,
       }
     );
 
@@ -201,17 +167,11 @@ export default function ReelsFeed() {
     return () => observerRef.current?.disconnect();
   }, [fetchReels]);
 
-  // Optional: keyboard navigation for accessibility (ArrowDown / ArrowUp)
+  // Keyboard navigation remains but scrollBy removed
   const handleKeyDown = (e) => {
     if (!feedRef.current) return;
 
-    if (e.key === "ArrowDown" || e.key === "PageDown") {
-      e.preventDefault();
-      feedRef.current.scrollBy({ top: window.innerHeight, behavior: "smooth" });
-    } else if (e.key === "ArrowUp" || e.key === "PageUp") {
-      e.preventDefault();
-      feedRef.current.scrollBy({ top: -window.innerHeight, behavior: "smooth" });
-    } else if (e.key === "Home") {
+    if (e.key === "Home") {
       e.preventDefault();
       feedRef.current.scrollTo({ top: 0, behavior: "smooth" });
     } else if (e.key === "End") {
@@ -227,39 +187,36 @@ export default function ReelsFeed() {
           {error}
         </div>
       ) : (
-        <div className="reels-viewport">
-          <div
-            ref={feedRef}
-            className="reels-feed"
-            onKeyDown={handleKeyDown}
-            tabIndex={0}
-            aria-label="Reels feed"
-          >
-            {reels.length === 0 && !loading ? (
-              <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
-                Hozircha hech qanday reel yo'q.
-              </div>
-            ) : (
-              reels.map((post) => (
-                <div key={post.id} className="reel-panel" aria-hidden={false}>
-                  <ReelItem post={post} />
-                </div>
-              ))
-            )}
-
-            {/* sentinel element observed by IntersectionObserver */}
-            <div
-              ref={loadMoreRef}
-              style={{
-                height: 120,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#777",
-              }}
-            >
-              {loading ? "Loading more reels…" : hasMore ? "" : "No more reels"}
+        <div
+          ref={feedRef}
+          className="reels-feed"
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          aria-label="Reels feed"
+        >
+          {reels.length === 0 && !loading ? (
+            <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
+              Hozircha hech qanday reel yo'q.
             </div>
+          ) : (
+            reels.map((post) => (
+              <div key={post.id} className="reel-panel" aria-hidden={false}>
+                <ReelItem post={post} />
+              </div>
+            ))
+          )}
+
+          <div
+            ref={loadMoreRef}
+            style={{
+              height: 120,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#777",
+            }}
+          >
+            {loading ? "Loading more reels…" : hasMore ? "" : "No more reels"}
           </div>
         </div>
       )}

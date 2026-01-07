@@ -350,13 +350,16 @@ body {
   overflow: hidden;
 }
 
+/* Replaced the targeted .reel-video rule (see requested change #2) */
 .reel-video {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  background: #000;
+  object-fit: contain;
+}
+@media (max-aspect-ratio: 9/16) {
+  .reel-video {
+    object-fit: cover;
+  }
 }
 
 /* Laptop va landscape video */
@@ -924,37 +927,37 @@ body.page--reels .app-shell {
 }
 
 /* reels feed is the single scroll container on Reels page */
+/* Replaced the targeted body.page--reels .reel-item block (see requested change #1)
+   and inserted the requested reels-feed + reel-panel + updated reel-item rules */
 body.page--reels .reels-feed {
   height: 100vh;
-  width: 100vw;
-  overflow-y: auto; /* use auto so overlays can allow pointer-events; change to scroll if you prefer always-visible scrollbar */
-  -webkit-overflow-scrolling: touch;
+  overflow-y: scroll;
   scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  width: 100vw;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: black;
 }
 
-/* each panel full viewport height and snap */
 body.page--reels .reel-panel {
-  scroll-snap-align: start;
   height: 100vh;
-  width: 100%;
+  scroll-snap-align: start;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* reel item sizing */
 body.page--reels .reel-item {
   height: 100vh;
-  width: 100%;
-  max-width: 430px;
+  width: min(100vw, 430px);
   aspect-ratio: 9 / 16;
   background: black;
   position: relative;
   overflow: hidden;
+  border-radius: 16px;
 }
 
 /* inner wraps (keeps previous rules) */
@@ -1068,7 +1071,7 @@ body.page--reels .reel-video {
     padding: 6px;
   }
 }
-/* ===== FIX: MOBILE KEYBOARD JUMP (Instagram style) ===== */
+ /* ===== FIX: MOBILE KEYBOARD JUMP (Instagram style) ===== */
 
 :root {
   --app-height: 100vh;
@@ -1118,72 +1121,6 @@ body.page--reels .reel-video {
 
 .mobile-brand .zom {
   color: #8F00FF !important;
-}
-/* ================= FINAL YOUTUBE-LIKE REELS LAYOUT ================= */
-
-/* sidebar joy egallamasligi uchun */
-body.page--reels .sidebar,
-body.page--reels .left-nav {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 72px;
-  height: 100vh;
-  z-index: 30;
-}
-
-/* reels viewport – markazlangan layer */
-body.page--reels .reels-viewport {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  background: #000;
-}
-
-/* reels-feed – faqat bitta scroll konteyner */
-body.page--reels .reels-feed {
-  width: 100%;
-  max-width: 480px;
-  height: 100dvh;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-body.page--reels .reels-feed::-webkit-scrollbar {
-  display: none;
-}
-
-/* har bir reel panel */
-body.page--reels .reel-panel {
-  height: 100dvh;
-  scroll-snap-align: start;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* reel card */
-body.page--reels .reel-item {
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 9 / 16;
-  height: 100%;
-  position: relative;
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* desktop landscape */
-@media (min-aspect-ratio: 1/1) {
-  body.page--reels .reel-item {
-    max-width: 460px;
-  }
-  body.page--reels .reel-video {
-    object-fit: contain;
-  }
 }
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
