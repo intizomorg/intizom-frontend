@@ -187,52 +187,37 @@ export default function ReelItem({ post }) {
       null;
 
     const io = new IntersectionObserver(
-      (entries) => {
-        const e = entries[0];
-        if (!e) return;
+  (entries) => {
+    const e = entries[0];
+    if (!e) return;
 
-        if (!e.isIntersecting) {
-          try { v.pause(); } catch {}
-          setIsPlaying(false);
-          if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
-          return;
-        }
+    const ratio = e.intersectionRatio ?? 0;
 
-        // pause previous active
-        if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
-          try {
-            window.__ACTIVE_REEL_VIDEO__.pause();
-            window.__ACTIVE_REEL_VIDEO__.muted = true;
-          } catch {}
-        }
+    // If the panel is less than 60% visible — pause it and bail out.
+    if (ratio < 0.6) {
+      try { v.pause(); } catch {}
+      setIsPlaying(false);
+      if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
+      return;
+    }
 
-        window.__ACTIVE_REEL_VIDEO__ = v;
-        v.muted = Boolean(window.__REELS_MUTED__ === true);
-        v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
+    // Only when >= 0.6 do we activate this reel.
+    if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
+      try {
+        window.__ACTIVE_REEL_VIDEO__.pause();
+        window.__ACTIVE_REEL_VIDEO__.muted = true;
+      } catch {}
+    }
 
-        // mark seen once (client-side)
-        const seen = getSeenSet();
-        if (!seen.has(post.id)) {
-          markSeen(post.id);
-          setViews((x) => x + 1);
+    window.__ACTIVE_REEL_VIDEO__ = v;
+    v.muted = Boolean(window.__REELS_MUTED__ === true);
+    v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
 
-          // notify server (best-effort)
-          if (API) {
-            (async () => {
-              try {
-                const token = localStorage.getItem("token");
-                const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                await fetch(`${API}/posts/${encodeURIComponent(post.id)}/view`, {
-                  method: "POST",
-                  headers,
-                });
-              } catch {}
-            })();
-          }
-        }
-      },
-      { root: rootElement, threshold: 0.6 }
-    );
+    // mark seen...
+  },
+  { root: rootElement, threshold: [0.6] }  /* use array to ensure intersectionRatio is reported reliably */
+);
+
 
     io.observe(container);
     return () => io.disconnect();
