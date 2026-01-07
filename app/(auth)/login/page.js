@@ -33,7 +33,7 @@ export default function LoginPage() {
 
     if (res.token) {
       localStorage.setItem("token", res.token);
-      document.cookie = `token=${res.token}; path=/; secure; samesite=strict`;
+      document.cookie = `token=${res.token}; path=/; max-age=604800; secure; samesite=lax`;
 
       let payload;
       try {
