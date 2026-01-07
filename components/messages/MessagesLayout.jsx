@@ -12,10 +12,6 @@ export default function MessagesLayout() {
   const searchParams = useSearchParams();
   const targetUsername = searchParams.get("user");
 
-  /* =======================
-     🔧 HEIGHT PATCH
-     Mobile viewport fix
-  ======================= */
   useEffect(() => {
     const setHeight = () => {
       document.documentElement.style.setProperty(
@@ -23,15 +19,11 @@ export default function MessagesLayout() {
         `${window.innerHeight}px`
       );
     };
-
     setHeight();
     window.addEventListener("resize", setHeight);
     return () => window.removeEventListener("resize", setHeight);
   }, []);
 
-  /* =======================
-     MOBILE CHECK
-  ======================= */
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -39,36 +31,37 @@ export default function MessagesLayout() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  /* =======================
-     🔧 IMPORTANT PATCH
-     URL orqali kelsa chatni
-     avtomatik ochish
-  ======================= */
   useEffect(() => {
-    if (!targetUsername) return;
-
-    setActiveChat({ username: targetUsername });
+    if (targetUsername) setActiveChat({ username: targetUsername });
   }, [targetUsername]);
 
   return (
     <div className="messages-layout">
-      {/* CHAT LIST */}
-      {(!isMobile || !activeChat) && (
+      <div
+        style={{
+          display: isMobile && activeChat ? "none" : "block",
+          height: "100%",
+        }}
+      >
         <ChatList
           activeChat={activeChat}
           onSelect={setActiveChat}
           targetUser={targetUsername ? { username: targetUsername } : null}
         />
-      )}
+      </div>
 
-      {/* CHAT WINDOW */}
-      {(!isMobile || activeChat) && (
+      <div
+        style={{
+          display: isMobile && !activeChat ? "none" : "flex",
+          height: "100%",
+        }}
+      >
         <ChatWindow
           chat={activeChat}
           onBack={() => setActiveChat(null)}
           isMobile={isMobile}
         />
-      )}
+      </div>
     </div>
   );
 }

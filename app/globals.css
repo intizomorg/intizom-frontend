@@ -978,6 +978,7 @@ body.page--reels .reel-video {
     object-fit: contain;
   }
 }
+
 /* ================= MOBILE TOP BAR (INSTAGRAM STYLE) ================= */
 
 .mobile-topbar {
@@ -1029,28 +1030,55 @@ body.page--reels .reel-video {
     padding-bottom: 88px; /* bottom-nav balandligi */
   }
 }
-/* ================= MOBILE MESSAGES UX ================= */
+
+/* ---------- Kept: --app-height variable (used by final mobile block) ---------- */
+:root {
+  --app-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
+/* ===== FINAL MOBILE MESSAGES FIX ===== */
 
 @media (max-width: 768px) {
   .messages-layout {
     display: block;
-    height: 100vh;
+    height: var(--app-height);
     border: none;
   }
 
   .chat-list {
     width: 100%;
-    height: 100vh;
+    height: var(--app-height);
     border-right: none;
   }
 
   .chat-window {
     width: 100%;
-    height: 100vh;
+    height: var(--app-height);
+    display: flex;
+    flex-direction: column;
   }
 
   .chat-window.empty {
     display: none;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-input {
+    position: sticky;
+    bottom: 0;
+    background: #000;
+    z-index: 20;
   }
 
   .chat-header {
@@ -1064,77 +1092,13 @@ body.page--reels .reel-video {
     border: none;
     font-size: 20px;
     color: #fff;
-    cursor: pointer;
     padding: 6px;
   }
 }
-/* ===== FIX: MOBILE KEYBOARD JUMP (Instagram style) ===== */
-
-:root {
-  --app-height: 100vh;
-}
-
-@supports (height: 100dvh) {
-  :root {
-    --app-height: 100dvh;
-  }
-}
-
 @media (max-width: 768px) {
-  .messages-layout,
-  .chat-list,
-  .chat-window {
-    height: var(--app-height);
-  }
-
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}@media (max-width: 768px) {
-  .chat-window {
-    height: var(--app-height);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 12px;
-  }
-
-  .chat-input {
-    position: sticky;
-    bottom: 0;
-    background: #000;
-    z-index: 20;
+  .messages-layout {
+    height: calc(var(--app-height) - 56px - 88px);
   }
 }
-
-/* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
-   Uncomment to force .app-main to stop scrolling across the whole app.
-   WARNING: this may affect other pages that expected .app-main to be the scroll container.
------------------------------------------------------------------------------- */
-/*
-.app-main {
-  height: auto !important;
-  overflow: visible !important;
-  -webkit-overflow-scrolling: auto !important;
-}
-
-.reels-feed {
-  height: 100vh;
-  width: 100vw;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: y mandatory;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: black;
-}
-*/
 
 /* ================= END of Reels fixes ================= */
