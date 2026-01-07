@@ -1092,18 +1092,24 @@ body.page--reels .reel-video {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-}
-@media (max-width: 768px) {
-  .chat-input {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 30;
+}@media (max-width: 768px) {
+  .chat-window {
+    height: var(--app-height);
+    display: flex;
+    flex-direction: column;
   }
 
-  .chat-window {
-    padding-bottom: 64px; /* input balandligi */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 12px;
+  }
+
+  .chat-input {
+    position: sticky;
+    bottom: 0;
+    background: #000;
+    z-index: 20;
   }
 }
 
