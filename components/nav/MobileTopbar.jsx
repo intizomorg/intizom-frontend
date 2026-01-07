@@ -16,18 +16,14 @@ export default function MobileTopbar() {
   return (
     <div className="mobile-topbar">
       <div className="mobile-brand">
-        {/* INTI — har doim oq */}
-        <span className="text-white">Inti</span>
+        {/* INTI — oq */}
+        <span className="inti-brand">inti</span>
 
-        {/* ZOM — har doim binafsha */}
-        <span className="text-intizom">ZOM</span>
+        {/* ZOM — binafsha */}
+        <span className="zom-brand">ZOM</span>
       </div>
 
-      <Link
-        href="/upload"
-        className="mobile-upload-btn"
-        aria-label="Upload"
-      >
+      <Link href="/upload" className="mobile-upload-btn" aria-label="Upload">
         <Plus className="mobile-upload-icon" />
       </Link>
     </div>
