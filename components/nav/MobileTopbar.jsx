@@ -15,10 +15,11 @@ export default function MobileTopbar() {
 
   return (
     <div className="mobile-topbar">
-      <div className="mobile-brand text-lg font-semibold tracking-wide">
-        {/* INTI — oq */}
-        <span className="text-gray-900 dark:text-white">Inti</span>
-        {/* ZOM — binafsha */}
+      <div className="mobile-brand">
+        {/* INTI — har doim oq */}
+        <span className="text-white">Inti</span>
+
+        {/* ZOM — har doim binafsha */}
         <span className="text-intizom">ZOM</span>
       </div>
 
