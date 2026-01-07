@@ -13,6 +13,23 @@ export default function MessagesLayout() {
   const targetUsername = searchParams.get("user");
 
   /* =======================
+     🔧 HEIGHT PATCH
+     Mobile viewport fix
+  ======================= */
+  useEffect(() => {
+    const setHeight = () => {
+      document.documentElement.style.setProperty(
+        "--app-height",
+        `${window.innerHeight}px`
+      );
+    };
+
+    setHeight();
+    window.addEventListener("resize", setHeight);
+    return () => window.removeEventListener("resize", setHeight);
+  }, []);
+
+  /* =======================
      MOBILE CHECK
   ======================= */
   useEffect(() => {
