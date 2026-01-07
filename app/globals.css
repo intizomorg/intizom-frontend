@@ -1172,6 +1172,44 @@ body.page--reels .app-main {
 .mobile-brand .zom {
   color: #8F00FF !important;
 }
+/* ================= MOBILE REELS HARD FIX ================= */
+@media (max-width: 1023px) {
+
+  body.page--reels,
+  body.page--reels html {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* app-main butunlay scroll qilmasin */
+  body.page--reels .app-main {
+    height: 100%;
+    overflow: hidden !important;
+  }
+
+  /* faqat reels-feed scroll bo‘lsin */
+  body.page--reels .reels-feed {
+    height: 100svh;                /* ❗ mobile-safe viewport */
+    min-height: 100svh;
+    max-height: 100svh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.page--reels .reel-panel {
+    height: 100svh;
+    min-height: 100svh;
+    max-height: 100svh;
+  }
+
+  body.page--reels .reel-item {
+    height: 100svh;
+    min-height: 100svh;
+    max-height: 100svh;
+  }
+}
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
    Uncomment to force .app-main to stop scrolling across the whole app.
