@@ -1029,6 +1029,45 @@ body.page--reels .reel-video {
     padding-bottom: 88px; /* bottom-nav balandligi */
   }
 }
+/* ================= MOBILE MESSAGES UX ================= */
+
+@media (max-width: 768px) {
+  .messages-layout {
+    display: block;
+    height: 100vh;
+    border: none;
+  }
+
+  .chat-list {
+    width: 100%;
+    height: 100vh;
+    border-right: none;
+  }
+
+  .chat-window {
+    width: 100%;
+    height: 100vh;
+  }
+
+  .chat-window.empty {
+    display: none;
+  }
+
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #fff;
+    cursor: pointer;
+    padding: 6px;
+  }
+}
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
    Uncomment to force .app-main to stop scrolling across the whole app.

@@ -15,7 +15,7 @@ function parseJwt(token) {
   }
 }
 
-export default function ChatWindow({ chat }) {
+export default function ChatWindow({ chat, onBack, isMobile }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const bottomRef = useRef(null);
@@ -111,6 +111,17 @@ export default function ChatWindow({ chat }) {
     <div className="chat-window">
       {/* HEADER */}
       <header className="chat-header">
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="back-btn"
+            aria-label="Back"
+          >
+            ←
+          </button>
+        )}
+
         <Link
           href={`/profile/${encodeURIComponent(chat.username)}`}
           className="chat-header-user"

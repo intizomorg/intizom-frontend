@@ -7,25 +7,51 @@ import ChatWindow from "./ChatWindow";
 
 export default function MessagesLayout() {
   const [activeChat, setActiveChat] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const searchParams = useSearchParams();
-  // ❌ old: const targetUserId = searchParams.get("user");
-  // ✅ new: treat "user" param as username
   const targetUsername = searchParams.get("user");
+
+  /* =======================
+     MOBILE CHECK
+  ======================= */
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  /* =======================
+     🔧 IMPORTANT PATCH
+     URL orqali kelsa chatni
+     avtomatik ochish
+  ======================= */
+  useEffect(() => {
+    if (!targetUsername) return;
+
+    setActiveChat({ username: targetUsername });
+  }, [targetUsername]);
 
   return (
     <div className="messages-layout">
-      <ChatList
-        activeChat={activeChat}
-        onSelect={setActiveChat}
-        targetUser={
-          targetUsername
-            ? { username: targetUsername } // ✅ only username
-            : null
-        }
-      />
+      {/* CHAT LIST */}
+      {(!isMobile || !activeChat) && (
+        <ChatList
+          activeChat={activeChat}
+          onSelect={setActiveChat}
+          targetUser={targetUsername ? { username: targetUsername } : null}
+        />
+      )}
 
-      <ChatWindow chat={activeChat} />
+      {/* CHAT WINDOW */}
+      {(!isMobile || activeChat) && (
+        <ChatWindow
+          chat={activeChat}
+          onBack={() => setActiveChat(null)}
+          isMobile={isMobile}
+        />
+      )}
     </div>
   );
 }
