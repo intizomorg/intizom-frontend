@@ -1112,16 +1112,12 @@ body.page--reels .reel-video {
     z-index: 20;
   }
 }
-.mobile-brand span {
-  color: inherit;
+.mobile-brand .inti {
+  color: #ffffff !important;
 }
 
 .mobile-brand .zom {
   color: #8F00FF !important;
-}
-
-.mobile-brand .inti {
-  color: #ffffff !important;
 }
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------

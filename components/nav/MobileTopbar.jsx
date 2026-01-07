@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 export default function MobileTopbar() {
   const pathname = usePathname();
 
-  // login va register sahifalarida chiqmasin
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/register")
@@ -16,11 +15,8 @@ export default function MobileTopbar() {
   return (
     <div className="mobile-topbar">
       <div className="mobile-brand">
-        {/* INTI — oq */}
-        <span className="inti-brand">inti</span>
-
-        {/* ZOM — binafsha */}
-        <span className="zom-brand">ZOM</span>
+        <span className="inti">inti</span>
+        <span className="zom">ZOM</span>
       </div>
 
       <Link href="/upload" className="mobile-upload-btn" aria-label="Upload">
