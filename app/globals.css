@@ -1210,6 +1210,22 @@ body.page--reels .app-main {
     max-height: 100svh;
   }
 }
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-shell {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-main {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
    Uncomment to force .app-main to stop scrolling across the whole app.
