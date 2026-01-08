@@ -334,89 +334,6 @@ body {
   text-align: center;
 }
 
-/* ================= REELS (FINAL & SAFE) ================= */
-
-.app-shell {
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background: #000;
-}
-
-.reel-video-wrap {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.reel-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #000;
-}
-
-/* Laptop va landscape video */
-@media (min-aspect-ratio: 1/1) {
-  .reel-video {
-    object-fit: contain;
-  }
-}
-
-
-/* 🔴 MUAMMO SHU YERDA EDI — HOZIR TUZATILDI */
-.reel-video {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;
-  object-position: center;
-  background: #000;
-  display: block;
-}
-
-/* Landscape videolar uchun xavfsiz holat */
-@media (min-aspect-ratio: 1/1) {
-  .reel-video {
-    object-fit: contain;
-  }
-}
-
-/* Right-side actions */
-.reel-actions {
-  position: absolute;
-  right: 16px;
-  bottom: 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  font-size: 24px;
-  z-index: 10;
-}
-
-.reel-actions .icon-button {
-  min-width: 48px;
-  min-height: 48px;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.02);
-}
-
-/* Bottom-left info */
-.reel-info {
-  position: absolute;
-  left: 16px;
-  bottom: 80px;
-  max-width: 70%;
-  font-size: 14px;
-  z-index: 10;
-  color: #fff;
-}
-
 /* ================= VOLUME UI (CSS-only visuals) ================= */
 
 .reel-volume {
@@ -448,7 +365,6 @@ body {
 }
 
 /* muted state visual */
-.reel-item.muted .reel-volume,
 .reel-volume.muted {
   background: rgba(255,255,255,0.03);
   color: #9ca3af;
@@ -512,11 +428,9 @@ body {
 }
 
 /* When JS toggles the parent class (e.g., .heart-animated), make the overlay visible briefly */
-.reel-item.heart-animated .heart-overlay,
 .post-media.heart-animated .heart-overlay {
   opacity: 1;
 }
-.reel-item.heart-animated .heart-overlay .overlay-heart,
 .post-media.heart-animated .heart-overlay .overlay-heart {
   opacity: 1;
   transform: scale(1.06);
@@ -525,7 +439,7 @@ body {
 /* Respect reduced-motion for the overlay */
 @media (prefers-reduced-motion: reduce) {
   .heart-icon.liked,
-  .reel-item.heart-animated .heart-overlay .overlay-heart,
+  .post-media.heart-animated .heart-overlay .overlay-heart,
   .reel-volume.icon-anim {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
@@ -801,7 +715,7 @@ body {
 /* Reduce motion for interactive pieces when user prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .heart-icon.liked,
-  .reel-item.heart-animated .heart-overlay .overlay-heart,
+  .post-media.heart-animated .heart-overlay .overlay-heart,
   .reel-volume.icon-anim {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
@@ -923,11 +837,21 @@ body.page--reels .app-shell {
   background: #000;
 }
 
-/* reels feed is the single scroll container on Reels page */
-body.page--reels .reels-feed {
+/* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
+   Uncomment to force .app-main to stop scrolling across the whole app.
+   WARNING: this may affect other pages that expected .app-main to be the scroll container.
+------------------------------------------------------------------------------ */
+/*
+.app-main {
+  height: auto !important;
+  overflow: visible !important;
+  -webkit-overflow-scrolling: auto !important;
+}
+
+.reels-feed {
   height: 100vh;
   width: 100vw;
-  overflow-y: auto; /* use auto so overlays can allow pointer-events; change to scroll if you prefer always-visible scrollbar */
+  overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: y mandatory;
   display: flex;
@@ -935,101 +859,9 @@ body.page--reels .reels-feed {
   align-items: center;
   background: black;
 }
+*/
 
-/* each panel full viewport height and snap */
-body.page--reels .reel-panel {
-  scroll-snap-align: start;
-  height: 100vh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* reel item sizing */
-/* === REELS: responsive, centered, no tiny column === */
-/* Full-viewport panels; desktop gets a wider central column */
-body.page--reels .reel-item {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;        /* strong snap: joriy panelni o‘tkazmaslikka yordam beradi */
-  height: 100vh;
-  width: 100%;
-  max-width: min(920px, 100%);     /* desktopda tor ustun emas, mobilda 100% */
-  margin: 0 auto;                  /* markazlash */
-  aspect-ratio: 9 / 16;
-  background: #000;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Extra layout for very wide screens */
-@media (min-width: 1400px) {
-  body.page--reels .reel-item {
-    max-width: 720px;              /* agar juda keng ekran bo‘lsa, biroz kengroq ko‘rsatiladi */
-  }
-}
-
-/* Video element: qoplama va landshaft holatini aniq belgilash */
-.reel-video {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;               /* mobil uchun to‘ldirish */
-  object-position: center;
-  display: block;
-  background: #000;
-  border-radius: 0;                /* agar rounded chiqayotgan bo‘lsa, 0 qilib qo‘ying; xohlasangiz 12px qo‘yish mumkin */
-}
-
-/* Desktop / landscape: video to‘liq ko‘rinishi uchun contain */
-@media (min-aspect-ratio: 1/1) {
-  body.page--reels .reel-video {
-    object-fit: contain;
-  }
-}
-
-/* Markaziy panelni to‘liq vertikal markazga keltirish (reel-panel yoki wrapper bo‘lsa ham yordam beradi) */
-body.page--reels .reel-panel {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100vh;
-}
-
-
-/* inner wraps (keeps previous rules) */
-body.page--reels .reel-video-wrap {
-  position: absolute;
-  inset: 0;
-}
-
-body.page--reels .reel-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* DESKTOP / LANDSCAPE */
-@media (min-aspect-ratio: 1/1) {
-  body.page--reels .reel-item {
-    max-width: 480px;
-  }
-  body.page--reels .reel-video {
-    object-fit: contain;
-  }
-}
-/* Hide app sidebar on Reels route so reels are centered and max-width takes effect */
-body.page--reels .app-sidebar,
-body.page--reels .left-nav {
-  display: none !important;
-}
-
-body.page--reels .app-main {
-  margin-left: 0 !important;
-  width: 100% !important;
-}
+/* ================= END of Reels fixes ================= */
 
 /* ================= MOBILE TOP BAR (INSTAGRAM STYLE) ================= */
 
@@ -1211,28 +1043,86 @@ body.page--reels .app-main {
   }
 }
 
-/* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
-   Uncomment to force .app-main to stop scrolling across the whole app.
-   WARNING: this may affect other pages that expected .app-main to be the scroll container.
------------------------------------------------------------------------------- */
-/*
-.app-main {
-  height: auto !important;
-  overflow: visible !important;
-  -webkit-overflow-scrolling: auto !important;
+/* ================= END of file (REELS rules removed/cleaned — final layout appended below) ================= */
+
+
+/* === REELS FINAL LAYOUT — DO NOT TOUCH === */
+
+body.page--reels {
+  height: 100%;
+  overflow: hidden;
 }
 
-.reels-feed {
-  height: 100vh;
-  width: 100vw;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
+body.page--reels .app-main {
+  height: 100%;
+  overflow: hidden !important;
+}
+
+body.page--reels .reels-feed {
+  height: 100svh;
+  overflow-y: auto;
   scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.page--reels .reel-panel {
+  height: 100svh;
+  scroll-snap-align: start;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+body.page--reels .reel-item {
+  height: 100svh;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+body.page--reels .reel-video-wrap,
+body.page--reels .reel-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Reel UI helpers you asked to add */
+.reel-info {
+  position: absolute;
+  left: 12px;
+  bottom: 18px;
+  color: #e5e7eb;
+  max-width: 72%;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.reel-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 120px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: black;
+  gap: 14px;
 }
-*/
 
-/* ================= END of Reels fixes ================= */
+.reel-actions button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  font-size: 18px;
+}
+
+.reel-caption {
+  font-size: 13px;
+  line-height: 1.35;
+  color: #d1d5db;
+  margin-top: 6px;
+}

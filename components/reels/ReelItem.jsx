@@ -4,13 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 /**
- * ReelItem — final, production-ready
- * - Uses "100svh" / "100vw" for consistent fullscreen on mobile/desktop
- * - Autoplay for the active visible reel (threshold 0.6)
- * - Optimistic like toggle with rollback
- * - Comments loaded when sheet opens; sheet slides from bottom (85svh)
- * - Guards when API or token missing
- * - Prefer post.user / post.userId for follow endpoints
+ * ReelItem — final, production-ready (inline styles removed)
  */
 
 export default function ReelItem({ post }) {
@@ -187,37 +181,36 @@ export default function ReelItem({ post }) {
       null;
 
     const io = new IntersectionObserver(
-  (entries) => {
-    const e = entries[0];
-    if (!e) return;
+      (entries) => {
+        const e = entries[0];
+        if (!e) return;
 
-    const ratio = e.intersectionRatio ?? 0;
+        const ratio = e.intersectionRatio ?? 0;
 
-    // If the panel is less than 60% visible — pause it and bail out.
-    if (ratio < 0.6) {
-      try { v.pause(); } catch {}
-      setIsPlaying(false);
-      if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
-      return;
-    }
+        // If the panel is less than 60% visible — pause it and bail out.
+        if (ratio < 0.6) {
+          try { v.pause(); } catch {}
+          setIsPlaying(false);
+          if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
+          return;
+        }
 
-    // Only when >= 0.6 do we activate this reel.
-    if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
-      try {
-        window.__ACTIVE_REEL_VIDEO__.pause();
-        window.__ACTIVE_REEL_VIDEO__.muted = true;
-      } catch {}
-    }
+        // Only when >= 0.6 do we activate this reel.
+        if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
+          try {
+            window.__ACTIVE_REEL_VIDEO__.pause();
+            window.__ACTIVE_REEL_VIDEO__.muted = true;
+          } catch {}
+        }
 
-    window.__ACTIVE_REEL_VIDEO__ = v;
-    v.muted = Boolean(window.__REELS_MUTED__ === true);
-    v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
+        window.__ACTIVE_REEL_VIDEO__ = v;
+        v.muted = Boolean(window.__REELS_MUTED__ === true);
+        v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
 
-    // mark seen...
-  },
-  { root: rootElement, threshold: [0.6] }  /* use array to ensure intersectionRatio is reported reliably */
-);
-
+        // mark seen...
+      },
+      { root: rootElement, threshold: [0.6] }  /* use array to ensure intersectionRatio is reported reliably */
+    );
 
     io.observe(container);
     return () => io.disconnect();
@@ -464,26 +457,14 @@ export default function ReelItem({ post }) {
       <button
         onClick={toggleGlobalMute}
         aria-label={reelsMuted ? "Unmute reels" : "Mute reels"}
-        style={{
-          position: "absolute",
-          top: 14,
-          right: 14,
-          zIndex: 50,
-          background: "rgba(0,0,0,0.5)",
-          border: "none",
-          borderRadius: 20,
-          padding: "8px 10px",
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: 14,
-        }}
+        className="reel-toggle-mute"
       >
         {reelsMuted ? "Unmute" : "Mute"}
       </button>
 
       {/* overlay heart */}
       {overlayHeart && (
-        <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 30 }}>
+        <div aria-hidden className="reel-overlay-heart">
           <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 21s-7.5-4.873-10.5-8.25C-0.5 8.75 4 4 7.5 6.5 9 7.75 10 9.5 12 11c2-1.5 3-3.25 4.5-4.5C20 4 24.5 8.75 22.5 12.75 19.5 16.127 12 21 12 21z" fill="#ef4444" />
           </svg>
@@ -491,12 +472,12 @@ export default function ReelItem({ post }) {
       )}
 
       {/* right-side actions */}
-      <div style={{ position: "absolute", right: 12, bottom: "18%", display: "flex", flexDirection: "column", gap: 18, zIndex: 20, alignItems: "center" }} aria-hidden>
+      <div className="reel-actions" aria-hidden>
         <button
           onClick={(e) => { e.stopPropagation(); toggleLike(e); }}
           aria-pressed={liked}
           aria-label={liked ? "Unlike" : "Like"}
-          style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(0,0,0,0.45)", border: "none", color: liked ? "#ef4444" : "#fff", fontSize: 20, cursor: "pointer" }}
+          className={`reel-action-btn reel-like-btn ${liked ? "liked" : ""}`}
         >
           {liked ? "❤️" : "🤍"}
         </button>
@@ -504,35 +485,35 @@ export default function ReelItem({ post }) {
         <button
           onClick={(e) => { e.stopPropagation(); setCommentsOpen(true); }}
           aria-label="Comments"
-          style={{ width: 52, height: 52, borderRadius: 12, background: "rgba(0,0,0,0.45)", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}
+          className="reel-action-btn reel-comment-btn"
         >
           💬
         </button>
 
-        <div style={{ color: "#fff", fontSize: 12, textAlign: "center", userSelect: "none", lineHeight: 1.1 }}>
-          <div style={{ fontWeight: 700 }}>{likesCount}</div>
-          <div style={{ opacity: 0.8, fontSize: 11 }}>{views} views</div>
+        <div className="reel-stats" aria-hidden>
+          <div className="reel-stats-likes">{likesCount}</div>
+          <div className="reel-stats-views">{views} views</div>
         </div>
       </div>
 
       {/* left-bottom info */}
-      <div style={{ position: "absolute", left: 12, bottom: 20, color: "#fff", zIndex: 40, maxWidth: "72%" }} aria-hidden>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href={`/profile/${profilePath}`} onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-            <div aria-hidden style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#333", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#fff" }}>
+      <div className="reel-info" aria-hidden>
+        <div className="reel-info-row">
+          <Link href={`/profile/${profilePath}`} onClick={(e) => e.stopPropagation()} className="reel-profile-link">
+            <div aria-hidden className="reel-avatar">
               {(typeof usernameStr === "string" && usernameStr[0]) ? usernameStr[0].toUpperCase() : "U"}
             </div>
 
-            <div style={{ fontWeight: 700 }}>@{usernameStr || "user"}</div>
+            <div className="reel-username">@{usernameStr || "user"}</div>
           </Link>
 
           {followTarget && (
             !isFollowing ? (
-              <button onClick={toggleFollow} aria-label="Follow" disabled={followLoading} style={{ marginLeft: 8, background: "#1da1f2", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
+              <button onClick={toggleFollow} aria-label="Follow" disabled={followLoading} className="reel-follow-btn">
                 {followLoading ? "..." : "Follow"}
               </button>
             ) : (
-              <button onClick={toggleFollow} aria-label="Unfollow" disabled={followLoading} style={{ marginLeft: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
+              <button onClick={toggleFollow} aria-label="Unfollow" disabled={followLoading} className="reel-follow-btn following">
                 {followLoading ? "..." : "Following"}
               </button>
             )
@@ -540,14 +521,14 @@ export default function ReelItem({ post }) {
         </div>
 
         {post.title && (
-          <div style={{ fontSize: 14, lineHeight: "1.15", opacity: 0.95, marginTop: 8 }}>
+          <div className="reel-caption">
             {post.title}
           </div>
         )}
       </div>
 
-      <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", opacity: 0.8, fontSize: 12, zIndex: 30, display: "flex", alignItems: "center", gap: 6, animation: "swipeAnim 1.6s ease-in-out infinite", color: "#fff", userSelect: "none" }} aria-hidden>
-        <span style={{ fontSize: 14 }}>↑</span>
+      <div className="reel-swipe-hint" aria-hidden>
+        <span className="reel-swipe-arrow">↑</span>
         <span>swipe</span>
       </div>
 
@@ -555,51 +536,29 @@ export default function ReelItem({ post }) {
       {commentsOpen && (
         <div
           onClick={() => setCommentsOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "flex-end", // sheet from bottom
-            justifyContent: "center",
-            padding: 0,
-          }}
+          className="comments-overlay"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: 720,
-              height: "85svh",
-              background: "#111",
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 16,
-              boxSizing: "border-box",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              overflow: "hidden",
-            }}
+            className="comments-sheet"
           >
-            <div style={{ width: 40, height: 4, background: "#444", margin: "0 auto 8px", borderRadius: 4 }} />
+            <div className="comments-handle" />
 
-            <div ref={commentsScrollRef} style={{ flex: 1, overflowY: "auto", color: "#fff", paddingRight: 8 }}>
+            <div ref={commentsScrollRef} className="comments-scroll">
               {commentsLoading ? (
-                <div style={{ textAlign: "center", color: "#777" }}>Yuklanmoqda...</div>
+                <div className="comments-empty">Yuklanmoqda...</div>
               ) : comments.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#777" }}>Hozircha komment yo'q</div>
+                <div className="comments-empty">Hozircha komment yo'q</div>
               ) : (
                 comments.map((c) => {
                   const key = c.id || `${typeof c.user === "string" ? c.user : (c.user?.username || c.user?.name || String(c.user))}-${c.createdAt || Math.random()}`;
                   return (
-                    <div key={key} style={{ marginBottom: 12 }}>
-                      <strong style={{ color: "#fff" }}>
+                    <div key={key} className="comment-item">
+                      <strong className="comment-author">
                         {typeof c.user === "string" ? c.user : (c.user?.username || c.user?.name || String(c.user) || "user")}
                       </strong>
-                      <div style={{ color: "#ddd", marginTop: 4 }}>{c.text}</div>
-                      <div style={{ color: "#777", fontSize: 12, marginTop: 6 }}>
+                      <div className="comment-text">{c.text}</div>
+                      <div className="comment-meta">
                         {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
                       </div>
                     </div>
@@ -608,12 +567,12 @@ export default function ReelItem({ post }) {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <div className="comments-form">
               <input
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Komment yozing..."
-                style={{ flex: 1, background: "#222", border: "1px solid #333", borderRadius: 8, padding: 10, color: "#fff" }}
+                className="comment-input"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -621,7 +580,7 @@ export default function ReelItem({ post }) {
                   }
                 }}
               />
-              <button onClick={submitReelComment} disabled={commentSubmitting} style={{ background: "#1da1f2", border: "none", borderRadius: 8, padding: "10px 14px", color: "#fff", fontWeight: 700 }}>
+              <button onClick={submitReelComment} disabled={commentSubmitting} className="comment-submit-btn">
                 {commentSubmitting ? "..." : "Yuborish"}
               </button>
             </div>
