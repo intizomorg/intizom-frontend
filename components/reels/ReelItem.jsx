@@ -180,44 +180,40 @@ export default function ReelItem({ post }) {
     const container = containerRef.current;
     if (!v || !container) return;
 
-    // try to find the nearest scroll container for reliable intersection detection
-    const rootElement =
-      (container && container.closest && container.closest(".reels-feed")) ||
-      document.querySelector(".reels-feed") ||
-      null;
+    // root is strictly the .reels-feed container
+    const rootElement = typeof document !== "undefined" ? document.querySelector(".reels-feed") : null;
 
     const io = new IntersectionObserver(
-  (entries) => {
-    const e = entries[0];
-    if (!e) return;
+      (entries) => {
+        const e = entries[0];
+        if (!e) return;
 
-    const ratio = e.intersectionRatio ?? 0;
+        const ratio = e.intersectionRatio ?? 0;
 
-    // If the panel is less than 60% visible — pause it and bail out.
-    if (ratio < 0.6) {
-      try { v.pause(); } catch {}
-      setIsPlaying(false);
-      if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
-      return;
-    }
+        // If the panel is less than 60% visible — pause it and bail out.
+        if (ratio < 0.6) {
+          try { v.pause(); } catch {}
+          setIsPlaying(false);
+          if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
+          return;
+        }
 
-    // Only when >= 0.6 do we activate this reel.
-    if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
-      try {
-        window.__ACTIVE_REEL_VIDEO__.pause();
-        window.__ACTIVE_REEL_VIDEO__.muted = true;
-      } catch {}
-    }
+        // Only when >= 0.6 do we activate this reel.
+        if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
+          try {
+            window.__ACTIVE_REEL_VIDEO__.pause();
+            window.__ACTIVE_REEL_VIDEO__.muted = true;
+          } catch {}
+        }
 
-    window.__ACTIVE_REEL_VIDEO__ = v;
-    v.muted = Boolean(window.__REELS_MUTED__ === true);
-    v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
+        window.__ACTIVE_REEL_VIDEO__ = v;
+        v.muted = Boolean(window.__REELS_MUTED__ === true);
+        v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
 
-    // mark seen...
-  },
-  { root: rootElement, threshold: [0.6] }  /* use array to ensure intersectionRatio is reported reliably */
-);
-
+        // mark seen...
+      },
+      { root: rootElement, threshold: [0.6] }  /* use array to ensure intersectionRatio is reported reliably */
+    );
 
     io.observe(container);
     return () => io.disconnect();

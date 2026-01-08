@@ -1,4 +1,7 @@
-/* globals.css - IntiZOM global styles (corrected) */
+/* globals.css - IntiZOM global styles (reels-fixed)
+   Applied: remove aspect-ratio on reel-item, ensure single scroll container (.reels-feed),
+   use 100svh consistently for reels panels/items on mobile, and keep video object-fit behavior.
+*/
 
 /* NOTE:
    Removed global `touch-action: manipulation` and other overly-broad rules
@@ -903,21 +906,26 @@ body {
    1) Prefer route-scoped override: when on Reels route add a class to <body>
       e.g. <body class="page--reels"> and then the rules below ensure:
         - .app-main WILL NOT scroll on Reels page
-        - .reels-feed is the only scroll container (100vh)
+        - .reels-feed is the only scroll container (100svh)
    2) If you cannot add a route class, you may enable the global fallback below,
       but beware it may affect other screens (home feed).
 ======================================================================== */
 
 /* ---------- Route-scoped (preferred) ---------- */
 /* Activate on Reels pages only — safest */
+body.page--reels {
+  /* ensure the page root uses the mobile-safe viewport unit where supported */
+}
+
+/* Make sure app-main does NOT scroll on Reels route; reels-feed is the single scroller */
 body.page--reels .app-main {
-  height: auto;
-  overflow: visible;
+  height: 100%;
+  overflow: hidden !important;
   -webkit-overflow-scrolling: auto;
 }
 
 body.page--reels .app-shell {
-  height: 100vh;
+  height: 100svh;
   width: 100vw;
   overflow: hidden;
   background: #000;
@@ -925,7 +933,7 @@ body.page--reels .app-shell {
 
 /* reels feed is the single scroll container on Reels page */
 body.page--reels .reels-feed {
-  height: 100vh;
+  height: 100svh;
   width: 100vw;
   overflow-y: auto; /* use auto so overlays can allow pointer-events; change to scroll if you prefer always-visible scrollbar */
   -webkit-overflow-scrolling: touch;
@@ -939,7 +947,9 @@ body.page--reels .reels-feed {
 /* each panel full viewport height and snap */
 body.page--reels .reel-panel {
   scroll-snap-align: start;
-  height: 100vh;
+  height: 100svh;
+  min-height: 100svh;
+  max-height: 100svh;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -951,12 +961,14 @@ body.page--reels .reel-panel {
 /* Full-viewport panels; desktop gets a wider central column */
 body.page--reels .reel-item {
   scroll-snap-align: start;
-  scroll-snap-stop: always;        /* strong snap: joriy panelni o‘tkazmaslikka yordam beradi */
-  height: 100vh;
+  scroll-snap-stop: always;        /* strong snap */
+  height: 100svh;
+  min-height: 100svh;
+  max-height: 100svh;
   width: 100%;
-  max-width: min(920px, 100%);     /* desktopda tor ustun emas, mobilda 100% */
-  margin: 0 auto;                  /* markazlash */
-  aspect-ratio: 9 / 16;
+  max-width: 100%;     /* mobile: full width; desktop constrained below */
+  margin: 0 auto;                  /* center */
+  /* aspect-ratio removed intentionally to allow video to fill container */
   background: #000;
   position: relative;
   overflow: hidden;
@@ -965,21 +977,21 @@ body.page--reels .reel-item {
 /* Extra layout for very wide screens */
 @media (min-width: 1400px) {
   body.page--reels .reel-item {
-    max-width: 720px;              /* agar juda keng ekran bo‘lsa, biroz kengroq ko‘rsatiladi */
+    max-width: 720px;              /* if very wide, allow a slightly wider column */
   }
 }
 
-/* Video element: qoplama va landshaft holatini aniq belgilash */
+/* Video element: cover on mobile, contain on wide/landscape */
 .reel-video {
   width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-  object-fit: cover;               /* mobil uchun to‘ldirish */
+  object-fit: cover;               /* mobile: fill */
   object-position: center;
   display: block;
   background: #000;
-  border-radius: 0;                /* agar rounded chiqayotgan bo‘lsa, 0 qilib qo‘ying; xohlasangiz 12px qo‘yish mumkin */
+  border-radius: 0;
 }
 
 /* Desktop / landscape: video to‘liq ko‘rinishi uchun contain */
@@ -995,9 +1007,8 @@ body.page--reels .reel-panel {
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 100vh;
+  height: 100svh;
 }
-
 
 /* inner wraps (keeps previous rules) */
 body.page--reels .reel-video-wrap {
@@ -1011,7 +1022,7 @@ body.page--reels .reel-video {
   object-fit: cover;
 }
 
-/* DESKTOP / LANDSCAPE */
+/* DESKTOP / LANDSCAPE tweaks */
 @media (min-aspect-ratio: 1/1) {
   body.page--reels .reel-item {
     max-width: 480px;
@@ -1078,8 +1089,8 @@ body.page--reels .app-main {
 }
 @media (max-width: 1023px) {
   .app-main {
-    padding-top: 56px;     /* mobile-topbar balandligi */
-    padding-bottom: 88px; /* bottom-nav balandligi */
+    padding-top: 56px;     /* mobile-topbar height */
+    padding-bottom: 88px; /* bottom-nav height */
   }
 }
 /* ================= MOBILE MESSAGES UX ================= */
@@ -1189,7 +1200,7 @@ body.page--reels .app-main {
 
   /* faqat reels-feed scroll bo‘lsin */
   body.page--reels .reels-feed {
-    height: 100svh;                /* ❗ mobile-safe viewport */
+    height: 100svh;                /* mobile-safe viewport */
     min-height: 100svh;
     max-height: 100svh;
     overflow-y: auto;
