@@ -5,7 +5,6 @@ export const fetchCache = "force-no-store";
 
 import { useState, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/lib/api";
 import { AuthContext } from "@/context/AuthContext";
 import "./login.css";
 
@@ -29,29 +28,35 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await loginUser({ username, password });
 
-    if (res.token) {
-      localStorage.setItem("token", res.token);
-      document.cookie = `token=${res.token}; path=/; max-age=604800; secure; samesite=lax`;
+    try {
+      // Foydalanuvchi login ma'lumotlarini yuboramiz
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: "include", // Cookie orqali session olish uchun
+      });
 
-      let payload;
-      try {
-        payload = JSON.parse(atob(res.token.split(".")[1]));
-      } catch {
-        setMsg("Login token yaroqsiz");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMsg(data.msg || "Login muvaffaqiyatsiz");
         return;
       }
 
-      setUser({
-        id: payload.id,
-        username: payload.username,
-        role: payload.role,
-      });
+      // Foydalanuvchi ma'lumotini olish
+      const me = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        credentials: "include",
+      }).then((r) => r.json());
 
+      setUser(me);
       router.push("/");
-    } else {
-      setMsg(res.msg);
+    } catch (error) {
+      console.error(error);
+      setMsg("Xatolik yuz berdi, qayta urinib ko‘ring");
     }
   };
 
@@ -76,7 +81,6 @@ export default function LoginPage() {
         <div className="right">
           <div className="login-box">
             <div className="logo">
-
               <span className="logo-inti">inti</span>
               <span className="logo-zom">ZOM</span>
             </div>
