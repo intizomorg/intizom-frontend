@@ -10,49 +10,53 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // 🔁 SERVERDAN FOYDALANUVCHINI O‘QISH (TOKEN DAN EMAS)
+  // 🔁 TOKEN DAN USER O‘QISH
   useEffect(() => {
-    const loadMe = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-          credentials: "include", // cookie bilan yuborish uchun
-        });
-
-        if (!res.ok) throw new Error("Foydalanuvchi topilmadi");
-
-        const me = await res.json();
-        setUser(me);
-      } catch (err) {
-        console.error("Load user error:", err);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadMe();
-  }, []);
-
-  // 🚪 LOGOUT — serverga POST so‘rov yuboradi va foydalanuvchini chiqaradi
-  const logout = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include", // cookie bilan yuborish
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // JWT payload decode
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      setUser({
+        id: payload.id,
+        username: payload.username,
+        role: payload.role,
       });
     } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
+      console.error("Auth parse error:", err);
       setUser(null);
-      router.push("/login");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
+
+  // 🚪 LOGOUT
+  const logout = () => {
+  localStorage.removeItem("token");
+  document.cookie = "token=; Max-Age=0; path=/";
+  setUser(null);
+  router.push("/login");
+};
+
 
   // ⏳ Loading paytida hech narsa ko‘rsatmaymiz
   if (loading) return null;
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
