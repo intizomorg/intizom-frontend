@@ -924,8 +924,8 @@ body.page--reels .app-shell {
 }
 
 /* reels feed is the single scroll container on Reels page */
+/* NOTE: removed height: 100vh here (handled by final mobile media query and natural layout) */
 body.page--reels .reels-feed {
-  height: 100vh;
   width: 100vw;
   overflow-y: auto; /* use auto so overlays can allow pointer-events; change to scroll if you prefer always-visible scrollbar */
   -webkit-overflow-scrolling: touch;
@@ -937,9 +937,9 @@ body.page--reels .reels-feed {
 }
 
 /* each panel full viewport height and snap */
+/* NOTE: removed height: 100vh here */
 body.page--reels .reel-panel {
   scroll-snap-align: start;
-  height: 100vh;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -949,14 +949,13 @@ body.page--reels .reel-panel {
 /* reel item sizing */
 /* === REELS: responsive, centered, no tiny column === */
 /* Full-viewport panels; desktop gets a wider central column */
+/* NOTE: removed height: 100vh and aspect-ratio: 9/16 from here */
 body.page--reels .reel-item {
   scroll-snap-align: start;
   scroll-snap-stop: always;        /* strong snap: joriy panelni o‘tkazmaslikka yordam beradi */
-  height: 100vh;
   width: 100%;
   max-width: min(920px, 100%);     /* desktopda tor ustun emas, mobilda 100% */
   margin: 0 auto;                  /* markazlash */
-  aspect-ratio: 9 / 16;
   background: #000;
   position: relative;
   overflow: hidden;
@@ -995,7 +994,6 @@ body.page--reels .reel-panel {
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: 100vh;
 }
 
 
@@ -1173,43 +1171,7 @@ body.page--reels .app-main {
   color: #8F00FF !important;
 }
 /* ================= MOBILE REELS HARD FIX ================= */
-@media (max-width: 1023px) {
-
-  body.page--reels,
-  body.page--reels html {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  /* app-main butunlay scroll qilmasin */
-  body.page--reels .app-main {
-    height: 100%;
-    overflow: hidden !important;
-  }
-
-  /* faqat reels-feed scroll bo‘lsin */
-  body.page--reels .reels-feed {
-    height: 100svh;                /* ❗ mobile-safe viewport */
-    min-height: 100svh;
-    max-height: 100svh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scroll-snap-type: y mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  body.page--reels .reel-panel {
-    height: 100svh;
-    min-height: 100svh;
-    max-height: 100svh;
-  }
-
-  body.page--reels .reel-item {
-    height: 100svh;
-    min-height: 100svh;
-    max-height: 100svh;
-  }
-}
+/* NOTE: removed the old 100svh block and replaced with the requested minimal mobile rule at the end of this file. */
 
 /* ---------- Global fallback (ONLY if you can't use route-scoped class) ----------
    Uncomment to force .app-main to stop scrolling across the whole app.
@@ -1236,3 +1198,34 @@ body.page--reels .app-main {
 */
 
 /* ================= END of Reels fixes ================= */
+
+/* =========================
+   APPENDED: Requested mobile-only Reels rules
+   (Place this at the very end so it overrides earlier rules only on small screens)
+   ========================= */
+
+@media (max-width: 1023px) {
+
+  body.page--reels,
+  body.page--reels html {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body.page--reels .app-main {
+    height: 100%;
+    overflow: hidden !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.page--reels .reels-feed {
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+  }
+
+  body.page--reels .reel-panel,
+  body.page--reels .reel-item {
+    height: 100%;
+  }
+}

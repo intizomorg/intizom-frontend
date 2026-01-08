@@ -6,7 +6,7 @@ import ReelItem from "./ReelItem";
 /**
  * ReelsFeed — production-ready feed
  * - Expects NEXT_PUBLIC_API_URL to be set (renders friendly message if not)
- * - Uses scroll-snap + 100svh for consistent fullscreen
+ * - Uses scroll-snap + JS-managed height for consistent fullscreen
  * - Robust pagination with refs to avoid races
  * - Sentinel observed with IntersectionObserver using the feed DOM node as root
  */
@@ -27,7 +27,6 @@ export default function ReelsFeed() {
       : "";
 
   if (!API) {
-    // Friendly fallback UI instead of throwing (throws crash the client)
     return (
       <div style={{ padding: 24, color: "#f87171", textAlign: "center" }}>
         Konfiguratsiya xatosi: NEXT_PUBLIC_API_URL sozlanmagan.
@@ -52,20 +51,35 @@ export default function ReelsFeed() {
   const observerRef = useRef(null);
   const feedRef = useRef(null);
 
+  // 🔥 FEED HEIGHT — JS orqali boshqarish (visualViewport fix)
+  useEffect(() => {
+    const setFeedHeight = () => {
+      if (!feedRef.current) return;
+      const h = window.visualViewport?.height || window.innerHeight;
+      feedRef.current.style.height = `${h}px`;
+    };
+
+    setFeedHeight();
+    window.addEventListener("resize", setFeedHeight);
+    window.visualViewport?.addEventListener("resize", setFeedHeight);
+
+    return () => {
+      window.removeEventListener("resize", setFeedHeight);
+      window.visualViewport?.removeEventListener("resize", setFeedHeight);
+    };
+  }, []);
+
   // keep refs in sync with state
   useEffect(() => {
     hasMoreRef.current = hasMore;
   }, [hasMore]);
+
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
 
   /**
    * fetchReels(pageNum)
-   * - prevents concurrent fetches with fetchingRef
-   * - normalizes backend shapes (posts | array)
-   * - maps _id -> id and filters only valid video posts
-   * - stops when backend returns empty page
    */
   const fetchReels = useCallback(
     async (pageNum = 1) => {
@@ -85,9 +99,7 @@ export default function ReelsFeed() {
           { headers }
         );
 
-        if (!res.ok) {
-          throw new Error("HTTP " + res.status);
-        }
+        if (!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json().catch(() => ({}));
 
@@ -107,10 +119,13 @@ export default function ReelsFeed() {
             viewsCount: Number(p.viewsCount ?? p.views ?? 0),
           }))
           .filter(
-            (p) => p.id && p.type === "video" && Array.isArray(p.media) && p.media[0]?.url
+            (p) =>
+              p.id &&
+              p.type === "video" &&
+              Array.isArray(p.media) &&
+              p.media[0]?.url
           );
 
-        // If no items returned -> stop further fetching
         if (onlyVideos.length === 0) {
           setHasMore(false);
           hasMoreRef.current = false;
@@ -118,13 +133,16 @@ export default function ReelsFeed() {
           return;
         }
 
-        // merge while preserving existing entries (avoid duplicates)
         setReels((prev) => {
           const map = new Map(prev.map((r) => [r.id, r]));
           onlyVideos.forEach((p) => {
             if (map.has(p.id)) {
               const old = map.get(p.id);
-              map.set(p.id, { ...old, ...p, comments: old.comments ?? p.comments ?? [] });
+              map.set(p.id, {
+                ...old,
+                ...p,
+                comments: old.comments ?? p.comments ?? [],
+              });
             } else {
               map.set(p.id, p);
             }
@@ -132,13 +150,11 @@ export default function ReelsFeed() {
           return Array.from(map.values());
         });
 
-        // backend provided hint about more pages
         const backendHasMore = Boolean(data.hasMore);
         const newHasMore = backendHasMore && onlyVideos.length > 0;
         setHasMore(newHasMore);
         hasMoreRef.current = newHasMore;
 
-        // advance page
         const next = pageNum + 1;
         setPage(next);
         pageRef.current = next;
@@ -153,7 +169,7 @@ export default function ReelsFeed() {
     [API]
   );
 
-  // Reset pagination & load first page on mount
+  // initial load
   useEffect(() => {
     setReels([]);
     setPage(1);
@@ -162,32 +178,27 @@ export default function ReelsFeed() {
     hasMoreRef.current = true;
     setError(null);
 
-    // initial load
     fetchReels(1);
-    // fetchReels is stable via useCallback (depends only on API)
   }, [fetchReels]);
 
-  // IntersectionObserver: observe sentinel (loadMoreRef) to fetch next page
+  // IntersectionObserver
   useEffect(() => {
     const el = loadMoreRef.current;
-    if (!el) return;
+    const rootEl = feedRef.current;
+    if (!el || !rootEl) return;
 
-    // disconnect previous
     observerRef.current?.disconnect();
-
-    // Use the feed DOM node as the intersection root (so sentinel triggers when feed scrolls)
-    const rootEl = feedRef.current || null;
-    if (!rootEl) return;
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
-        if (!e) return;
-        if (!e.isIntersecting) return;
-        if (fetchingRef.current) return;
-        if (!hasMoreRef.current) return;
-
-        fetchReels(pageRef.current);
+        if (
+          e?.isIntersecting &&
+          !fetchingRef.current &&
+          hasMoreRef.current
+        ) {
+          fetchReels(pageRef.current);
+        }
       },
       {
         root: rootEl,
@@ -197,15 +208,13 @@ export default function ReelsFeed() {
     );
 
     observerRef.current.observe(el);
-
     return () => observerRef.current?.disconnect();
   }, [fetchReels]);
 
-  // Optional: keyboard navigation for accessibility (ArrowDown / ArrowUp)
+  // keyboard navigation
   const handleKeyDown = (e) => {
     if (!feedRef.current) return;
-
-    const pageHeight = feedRef.current.clientHeight || window.innerHeight;
+    const pageHeight = feedRef.current.clientHeight;
 
     if (e.key === "ArrowDown" || e.key === "PageDown") {
       e.preventDefault();
@@ -213,12 +222,6 @@ export default function ReelsFeed() {
     } else if (e.key === "ArrowUp" || e.key === "PageUp") {
       e.preventDefault();
       feedRef.current.scrollBy({ top: -pageHeight, behavior: "smooth" });
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      feedRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (e.key === "End") {
-      e.preventDefault();
-      feedRef.current.scrollTo({ top: feedRef.current.scrollHeight, behavior: "smooth" });
     }
   };
 
@@ -234,21 +237,13 @@ export default function ReelsFeed() {
           className="reels-feed"
           onKeyDown={handleKeyDown}
           tabIndex={0}
-          aria-label="Reels feed"
         >
-          {reels.length === 0 && !loading ? (
-            <div style={{ color: "#777", textAlign: "center", marginTop: 40 }}>
-              Hozircha hech qanday reel yo'q.
+          {reels.map((post) => (
+            <div key={post.id} className="reel-panel">
+              <ReelItem post={post} />
             </div>
-          ) : (
-            reels.map((post) => (
-              <div key={post.id} className="reel-panel" aria-hidden={false}>
-                <ReelItem post={post} />
-              </div>
-            ))
-          )}
+          ))}
 
-          {/* sentinel element observed by IntersectionObserver */}
           <div
             ref={loadMoreRef}
             style={{
