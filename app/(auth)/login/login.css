@@ -181,3 +181,9 @@
   z-index: 5;
   pointer-events: auto !important;
 }
+.login-box input {
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
+  background-color: #fafafa !important;
+  caret-color: #111 !important;
+}
