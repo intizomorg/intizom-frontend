@@ -1,3 +1,4 @@
+// context/AuthContext.jsx (replace relevant parts)
 "use client";
 
 import { createContext, useEffect, useState } from "react";
@@ -10,10 +11,19 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // 🔁 TOKEN DAN USER O‘QISH
   useEffect(() => {
     try {
-      const token = localStorage.getItem("token");
+      // if no token in localStorage, try to read token from cookie
+      let token = null;
+      if (typeof window !== "undefined") {
+        token = localStorage.getItem("token");
+        if (!token) {
+          // look for cookie token
+          const m = document.cookie.match(/(?:^|; )token=([^;]+)/);
+          if (m && m[1]) token = decodeURIComponent(m[1]);
+          if (token) localStorage.setItem("token", token);
+        }
+      }
 
       if (!token) {
         setUser(null);
@@ -37,24 +47,24 @@ export default function AuthProvider({ children }) {
     }
   }, []);
 
-  // 🚪 LOGOUT
+  // Logout: clear both storage and cookie
   const logout = () => {
-  localStorage.removeItem("token");
-  document.cookie = "token=; Max-Age=0; path=/";
-  setUser(null);
-  router.push("/login");
-};
+    try {
+      localStorage.removeItem("token");
+      document.cookie = "token=; Max-Age=0; path=/; domain=" + (location.hostname || "");
+    } catch (e) { /* ignore */ }
+    setUser(null);
+    router.push("/login");
+  };
 
-
-  // ⏳ Loading paytida hech narsa ko‘rsatmaymiz
-  if (loading) return null;
-
+  // IMPORTANT: do not return null while loading; allow children to render
   return (
     <AuthContext.Provider
       value={{
         user,
         setUser,
         logout,
+        loading
       }}
     >
       {children}
