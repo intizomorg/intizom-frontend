@@ -163,3 +163,21 @@
   cursor: pointer;
   font-weight: bold;
 }
+/* ====== HARD FIX: input freeze ====== */
+
+/* rasm qatlamlarini faqat vizual qilamiz */
+.phone-frame,
+.phone-bg,
+.screen {
+  pointer-events: none !important;
+  z-index: 1;
+}
+
+/* login qismini ustiga chiqaramiz */
+.right,
+.login-box,
+.login-box * {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto !important;
+}
