@@ -12,7 +12,8 @@ import "./login.css";
 export default function LoginPage() {
   const router = useRouter();
   const ctx = useContext(AuthContext);
-  const setUser = ctx?.setUser; // defensive: ctx bo'lmasa undefined bo'ladi
+  if (!ctx) return null;
+  const { setUser } = ctx;
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -28,32 +29,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
+    const res = await loginUser({ username, password });
 
-    let res;
-    try {
-      // Pass credentials: 'include' so server can set HttpOnly cookie via Set-Cookie
-      res = await loginUser({ username, password }, { credentials: "include" });
-    } catch (err) {
-      console.error("Login error:", err);
-      setMsg("Tarmoq xatosi. Iltimos keyinroq urinib ko‘ring.");
-      return;
-    }
-
-    if (res && res.token) {
-      // store token client-side for fast client reads (not a replacement for HttpOnly cookie)
-      try {
-        localStorage.setItem("token", res.token);
-      } catch (e) {
-        // ignore localStorage failures (e.g., private mode)
-      }
-
-      // optional: non-HttpOnly cookie (server should ideally set HttpOnly cookie)
-      try {
-        document.cookie = `token=${res.token}; path=/; max-age=604800; secure; samesite=lax`;
-      } catch (e) {
-        // ignore cookie set errors in restrictive environments
-      }
+    if (res.token) {
+      localStorage.setItem("token", res.token);
+      document.cookie = `token=${res.token}; path=/; max-age=604800; secure; samesite=lax`;
 
       let payload;
       try {
@@ -63,8 +43,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Defensive: only call setUser if available
-      setUser?.({
+      setUser({
         id: payload.id,
         username: payload.username,
         role: payload.role,
@@ -72,7 +51,7 @@ export default function LoginPage() {
 
       router.push("/");
     } else {
-      setMsg(res?.msg || "Login xatosi");
+      setMsg(res.msg);
     }
   };
 
@@ -97,6 +76,7 @@ export default function LoginPage() {
         <div className="right">
           <div className="login-box">
             <div className="logo">
+
               <span className="logo-inti">inti</span>
               <span className="logo-zom">ZOM</span>
             </div>
