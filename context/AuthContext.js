@@ -10,13 +10,12 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // 🔁 SERVERDAN USERNI O‘QISH
   useEffect(() => {
     const load = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-          { credentials: "include" } // cookie bilan yuborish
+          { credentials: "include" }
         );
 
         if (!res.ok) {
@@ -27,7 +26,6 @@ export default function AuthProvider({ children }) {
         const data = await res.json();
         setUser(data);
       } catch (err) {
-        console.error("Auth fetch error:", err);
         setUser(null);
       } finally {
         setLoading(false);
@@ -37,25 +35,20 @@ export default function AuthProvider({ children }) {
     load();
   }, []);
 
-  // 🚪 LOGOUT
-  const logout = () => {
-    localStorage.removeItem("token");
-    document.cookie = "token=; Max-Age=0; path=/";
+  const logout = async () => {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+
     setUser(null);
     router.push("/login");
   };
 
-  // ⏳ Loading paytida hech narsa ko‘rsatmaymiz
   if (loading) return null;
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        setUser,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

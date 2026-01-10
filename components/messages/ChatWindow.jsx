@@ -1,48 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useContext } from "react";
 import Link from "next/link";
-
-/* =======================
-   JWT PARSER (SAFE)
-======================= */
-function parseJwt(token) {
-  try {
-    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(base64));
-  } catch {
-    return null;
-  }
-}
+import { AuthContext } from "@/context/AuthContext";
 
 export default function ChatWindow({ chat, onBack, isMobile }) {
+  const { user } = useContext(AuthContext);
+
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const bottomRef = useRef(null);
-
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
-
-  // A. myUsername token ichidan olinadi (FIXED)
-  const payload = token ? parseJwt(token) : null;
-  const myUsername = payload?.username || null;
 
   /* =======================
      LOAD MESSAGES
   ======================= */
   useEffect(() => {
-    if (!chat?.username || !token) return;
+    if (!chat?.username || !user) return;
 
     fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/messages/${encodeURIComponent(
         chat.username
       )}`,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       }
     )
       .then((res) => {
@@ -51,7 +31,7 @@ export default function ChatWindow({ chat, onBack, isMobile }) {
       })
       .then((data) => setMessages(data || []))
       .catch(console.error);
-  }, [chat?.username, token]);
+  }, [chat?.username, user]);
 
   /* =======================
      AUTO SCROLL
@@ -73,26 +53,18 @@ export default function ChatWindow({ chat, onBack, isMobile }) {
   ======================= */
   const sendMessage = async (e) => {
     e.preventDefault();
-
-    if (!text.trim()) return;
-    if (!chat?.username) return;
-    if (!token) return;
+    if (!text.trim() || !chat?.username || !user) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            to: chat.username,
-            text: text.trim(),
-          }),
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: chat.username,
+          text: text.trim(),
+        }),
+      });
 
       if (!res.ok) throw new Error("Failed to send message");
 
@@ -109,15 +81,9 @@ export default function ChatWindow({ chat, onBack, isMobile }) {
 
   return (
     <div className="chat-window">
-      {/* HEADER */}
       <header className="chat-header">
         {isMobile && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="back-btn"
-            aria-label="Back"
-          >
+          <button onClick={onBack} className="back-btn">
             ←
           </button>
         )}
@@ -130,13 +96,12 @@ export default function ChatWindow({ chat, onBack, isMobile }) {
         </Link>
       </header>
 
-      {/* MESSAGES */}
       <div className="chat-messages">
         {messages.map((m) => (
           <div
             key={m._id || `${m.from}-${m.createdAt}`}
             className={`msg ${
-              m.from === myUsername ? "outgoing" : "incoming"
+              m.from === user?.username ? "outgoing" : "incoming"
             }`}
           >
             {m.text}
@@ -145,14 +110,13 @@ export default function ChatWindow({ chat, onBack, isMobile }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT */}
       <form className="chat-input" onSubmit={sendMessage}>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Message..."
         />
-        <button type="submit" className="send-btn" aria-label="Send message">
+        <button type="submit" className="send-btn">
           ➤
         </button>
       </form>

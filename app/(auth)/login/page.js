@@ -15,7 +15,6 @@ export default function LoginPage() {
   if (!ctx) return null;
   const { setUser } = ctx;
 
-  // ---------------- STATE'LAR ----------------
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,48 +23,37 @@ export default function LoginPage() {
   const [userFocused, setUserFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
 
-  // ---------------- EFFECT ----------------
   useEffect(() => {
     const inti = document.querySelector(".logo-inti");
-    if (inti) {
-      inti.style.color = "#111111";
-    }
+    if (inti) inti.style.color = "#111111";
   }, []);
 
-  // ---------------- SUBMIT (YANGI) ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
 
-    try {
-      const res = await loginUser({ username, password });
+    const res = await loginUser({ username, password });
 
-      if (res.msg === "Login muvaffaqiyatli") {
-        const me = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-          {
-            credentials: "include",
-          }
-        );
-
-        if (!me.ok) {
-          setMsg("User maʼlumotini olishda xatolik");
-          return;
-        }
-
-        const user = await me.json();
-        setUser(user);
-        router.push("/");
-      } else {
-        setMsg(res.msg || "Login xatosi");
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg("Server bilan bog‘lanib bo‘lmadi");
+    if (res.msg !== "Login muvaffaqiyatli") {
+      setMsg(res.msg || "Login xatosi");
+      return;
     }
+
+    // cookie orqali userni olish
+    const me = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      credentials: "include",
+    });
+
+    if (!me.ok) {
+      setMsg("Userni olishda xatolik");
+      return;
+    }
+
+    const user = await me.json();
+    setUser(user);
+    router.push("/");
   };
 
-  // ---------------- UI ----------------
   return (
     <div className="page">
       <div className="container">
@@ -92,7 +80,6 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              {/* USERNAME */}
               <input
                 type="text"
                 value={username}
@@ -103,7 +90,6 @@ export default function LoginPage() {
                 required
               />
 
-              {/* PASSWORD */}
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -114,7 +100,6 @@ export default function LoginPage() {
                   placeholder={passFocused ? "" : "Parol"}
                   required
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
