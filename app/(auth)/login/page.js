@@ -15,11 +15,14 @@ export default function LoginPage() {
   if (!ctx) return null;
   const { setUser } = ctx;
 
+  // ---------------- STATE'LAR ----------------
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
+  const [userFocused, setUserFocused] = useState(false); // <-- QO‘SHILDI
 
+  // ---------------- EFFECT ----------------
   useEffect(() => {
     const inti = document.querySelector(".logo-inti");
     if (inti) {
@@ -27,6 +30,7 @@ export default function LoginPage() {
     }
   }, []);
 
+  // ---------------- SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     const res = await loginUser({ username, password });
@@ -55,6 +59,7 @@ export default function LoginPage() {
     }
   };
 
+  // ---------------- UI ----------------
   return (
     <div className="page">
       <div className="container">
@@ -76,7 +81,6 @@ export default function LoginPage() {
         <div className="right">
           <div className="login-box">
             <div className="logo">
-
               <span className="logo-inti">inti</span>
               <span className="logo-zom">ZOM</span>
             </div>
@@ -84,9 +88,11 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               <input
                 type="text"
-                placeholder="Telefon, username yoki email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                onFocus={() => setUserFocused(true)}
+                onBlur={() => setUserFocused(false)}
+                placeholder={userFocused ? "" : "username kiriting"}
               />
 
               <div style={{ position: "relative" }}>
