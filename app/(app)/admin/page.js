@@ -4,7 +4,8 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 import { useEffect, useState } from "react";
-import API_BASE from "@/lib/api";
+
+const ADMIN_API = "https://admin-api.intizom.org";
 
 export default function AdminPage() {
   const [posts, setPosts] = useState([]);
@@ -23,10 +24,11 @@ export default function AdminPage() {
         setMsg("Admin sifatida login qiling");
         setMsgType("error");
         setPosts([]);
+        setLoading(false);
         return;
       }
 
-      const res = await fetch(`${API_BASE}/admin/posts`, {
+      const res = await fetch(`${ADMIN_API}/admin/posts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -73,7 +75,7 @@ export default function AdminPage() {
     setMsg("");
 
     try {
-      const res = await fetch(`${API_BASE}/admin/posts/${id}`, {
+      const res = await fetch(`${ADMIN_API}/admin/posts/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -114,7 +116,7 @@ export default function AdminPage() {
     setMsg("");
 
     try {
-      const res = await fetch(`${API_BASE}/admin/posts/${id}/approve`, {
+      const res = await fetch(`${ADMIN_API}/admin/posts/${id}/approve`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
