@@ -106,10 +106,11 @@ export default function UploadPage() {
 
     try {
       const res = await fetch(`${API}/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
+  method: "POST",
+  body: fd,
+  credentials: "include"
+});
+
 
       const data = await res.json().catch(() => ({}));
 

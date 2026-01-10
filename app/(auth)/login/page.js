@@ -38,8 +38,6 @@ export default function LoginPage() {
     const res = await loginUser({ username, password });
 
     if (res.token) {
-      localStorage.setItem("token", res.token);
-      document.cookie = `token=${res.token}; path=/; max-age=604800; secure; samesite=lax`;
 
       let payload;
       try {
