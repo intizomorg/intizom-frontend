@@ -1,4 +1,3 @@
-// context/AuthContext.jsx (replace relevant parts)
 "use client";
 
 import { createContext, useEffect, useState } from "react";
@@ -11,60 +10,50 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // 🔁 SERVERDAN USERNI O‘QISH
   useEffect(() => {
-    try {
-      // if no token in localStorage, try to read token from cookie
-      let token = null;
-      if (typeof window !== "undefined") {
-        token = localStorage.getItem("token");
-        if (!token) {
-          // look for cookie token
-          const m = document.cookie.match(/(?:^|; )token=([^;]+)/);
-          if (m && m[1]) token = decodeURIComponent(m[1]);
-          if (token) localStorage.setItem("token", token);
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+          { credentials: "include" } // cookie bilan yuborish
+        );
+
+        if (!res.ok) {
+          setUser(null);
+          return;
         }
-      }
 
-      if (!token) {
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        console.error("Auth fetch error:", err);
         setUser(null);
+      } finally {
         setLoading(false);
-        return;
       }
+    };
 
-      // JWT payload decode
-      const payload = JSON.parse(atob(token.split(".")[1]));
-
-      setUser({
-        id: payload.id,
-        username: payload.username,
-        role: payload.role,
-      });
-    } catch (err) {
-      console.error("Auth parse error:", err);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+    load();
   }, []);
 
-  // Logout: clear both storage and cookie
+  // 🚪 LOGOUT
   const logout = () => {
-    try {
-      localStorage.removeItem("token");
-      document.cookie = "token=; Max-Age=0; path=/; domain=" + (location.hostname || "");
-    } catch (e) { /* ignore */ }
+    localStorage.removeItem("token");
+    document.cookie = "token=; Max-Age=0; path=/";
     setUser(null);
     router.push("/login");
   };
 
-  // IMPORTANT: do not return null while loading; allow children to render
+  // ⏳ Loading paytida hech narsa ko‘rsatmaymiz
+  if (loading) return null;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         setUser,
         logout,
-        loading
       }}
     >
       {children}

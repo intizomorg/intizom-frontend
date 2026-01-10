@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [msg, setMsg] = useState("");
 
   const [userFocused, setUserFocused] = useState(false);
-  const [passFocused, setPassFocused] = useState(false); // ✅ YANGI STATE
+  const [passFocused, setPassFocused] = useState(false);
 
   // ---------------- EFFECT ----------------
   useEffect(() => {
@@ -32,30 +32,36 @@ export default function LoginPage() {
     }
   }, []);
 
-  // ---------------- SUBMIT ----------------
+  // ---------------- SUBMIT (YANGI) ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await loginUser({ username, password });
+    setMsg("");
 
-    if (res.token) {
+    try {
+      const res = await loginUser({ username, password });
 
-      let payload;
-      try {
-        payload = JSON.parse(atob(res.token.split(".")[1]));
-      } catch {
-        setMsg("Login token yaroqsiz");
-        return;
+      if (res.msg === "Login muvaffaqiyatli") {
+        const me = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!me.ok) {
+          setMsg("User maʼlumotini olishda xatolik");
+          return;
+        }
+
+        const user = await me.json();
+        setUser(user);
+        router.push("/");
+      } else {
+        setMsg(res.msg || "Login xatosi");
       }
-
-      setUser({
-        id: payload.id,
-        username: payload.username,
-        role: payload.role,
-      });
-
-      router.push("/");
-    } else {
-      setMsg(res.msg);
+    } catch (err) {
+      console.error(err);
+      setMsg("Server bilan bog‘lanib bo‘lmadi");
     }
   };
 
@@ -94,6 +100,7 @@ export default function LoginPage() {
                 onFocus={() => setUserFocused(true)}
                 onBlur={() => setUserFocused(false)}
                 placeholder={userFocused ? "" : "username kiriting"}
+                required
               />
 
               {/* PASSWORD */}
@@ -105,6 +112,7 @@ export default function LoginPage() {
                   onFocus={() => setPassFocused(true)}
                   onBlur={() => setPassFocused(false)}
                   placeholder={passFocused ? "" : "Parol"}
+                  required
                 />
 
                 <button
