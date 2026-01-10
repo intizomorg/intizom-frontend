@@ -20,7 +20,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
-  const [userFocused, setUserFocused] = useState(false); // <-- QO‘SHILDI
+
+  const [userFocused, setUserFocused] = useState(false);
+  const [passFocused, setPassFocused] = useState(false); // ✅ YANGI STATE
 
   // ---------------- EFFECT ----------------
   useEffect(() => {
@@ -86,6 +88,7 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {/* USERNAME */}
               <input
                 type="text"
                 value={username}
@@ -95,13 +98,17 @@ export default function LoginPage() {
                 placeholder={userFocused ? "" : "username kiriting"}
               />
 
+              {/* PASSWORD */}
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Parol"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setPassFocused(true)}
+                  onBlur={() => setPassFocused(false)}
+                  placeholder={passFocused ? "" : "Parol"}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
