@@ -7,11 +7,12 @@
 
 .page {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100svh;
   background: #f0f0f0;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
 }
 
 .container {
@@ -93,6 +94,12 @@
   border: 1px solid #dbdbdb;
   background: #fafafa;
   border-radius: 6px;
+}
+
+/* Input placeholder Android Chrome bug fix */
+.login-box input::placeholder {
+  color: #777;
+  opacity: 1;
 }
 
 .login-btn {
@@ -186,4 +193,36 @@
   -webkit-text-fill-color: #111 !important;
   background-color: #fafafa !important;
   caret-color: #111 !important;
+}
+
+/* ================= MOBILE FIX ================= */
+
+@media (max-width: 900px) {
+
+  .container {
+    flex-direction: column;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .right {
+    width: 100%;
+    align-items: center;
+  }
+
+  .login-box,
+  .signup-box {
+    width: 100%;
+    max-width: 380px;
+    padding: 30px 20px;
+  }
+
+  .logo {
+    font-size: 36px;
+  }
+
+  .login-btn {
+    padding: 14px;
+    font-size: 17px;
+  }
 }
