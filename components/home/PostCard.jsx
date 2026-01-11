@@ -23,12 +23,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-function getToken() {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(/(?:^|; )token=([^;]*)/);
-  return m ? m[1] : null;
-}
-
 function inferTypeFromUrl(url = "") {
   try {
     const u = String(url).split("?")[0];
@@ -209,10 +203,8 @@ function PostCard({ post, onDeleted }) {
     const loadComments = async () => {
       setLoadingComments(true);
       try {
-        const token = getToken();
-
         const res = await fetch(`${API}/posts/${encodeURIComponent(postId)}/comments`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: "include",
         });
 
         const data = await res.json().catch(() => null);
@@ -261,7 +253,6 @@ function PostCard({ post, onDeleted }) {
       return;
     }
 
-    const token = getToken();
     const prevLiked = liked;
     const prevCount = likesCount;
     const nextLiked = !prevLiked;
@@ -278,7 +269,7 @@ function PostCard({ post, onDeleted }) {
         : `${API}/posts/${encodeURIComponent(postId)}/unlike`;
       const res = await fetch(url, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       });
 
       if (reqId !== likeReqIdRef.current) return;
@@ -337,14 +328,13 @@ function PostCard({ post, onDeleted }) {
 
   const handleFollow = async () => {
     if (!user || !postUsername) return;
-    const token = getToken();
     setFollowLoading(true);
     setIsFollowing(true);
 
     try {
       const res = await fetch(`${API}/follow/${encodeURIComponent(postUsername)}`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       });
       if (!res.ok) {
         setIsFollowing(false);
@@ -367,11 +357,10 @@ function PostCard({ post, onDeleted }) {
       setShowUnfollowModal(false);
       return;
     }
-    const token = getToken();
     try {
       const res = await fetch(`${API}/unfollow/${encodeURIComponent(postUsername)}`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       });
       if (res.ok) {
         setIsFollowing(false);
@@ -392,11 +381,11 @@ function PostCard({ post, onDeleted }) {
       alert("Iltimos tizimga kiring");
       return;
     }
-    const token = getToken();
     try {
       const res = await fetch(`${API}/posts/${encodeURIComponent(postId)}/comment`, {
         method: "POST",
-        headers: Object.assign({ "Content-Type": "application/json" }, token ? { Authorization: `Bearer ${token}` } : {}),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
       const data = await res.json().catch(() => ({}));
@@ -422,12 +411,11 @@ function PostCard({ post, onDeleted }) {
 
   const handleAdminDelete = async () => {
     if (!confirm("Postni o‘chirmoqchimisiz?")) return;
-    const token = getToken();
     setLoading(true);
     try {
       const res = await fetch(`${API}/admin/posts/${encodeURIComponent(postId)}`, {
         method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       });
       if (res.ok) {
         if (onDeleted) onDeleted(postId);
