@@ -13,7 +13,7 @@ import AvatarViewerModal from "@/components/profile/AvatarViewerModal";
  * ProfilePage — corrected & hardened (avatar cache busting)
  */
 
-// 2-QADAM: useIsMobile hook (importlardan keyin)
+// useIsMobile hook
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -27,7 +27,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-// 3-QADAM: yangilangan btnStyle (oldingi talab bo'yicha)
 const btnStyle = {
   background: "linear-gradient(135deg,#fd1d1d,#fcb045)",
   border: "none",
@@ -40,7 +39,6 @@ const btnStyle = {
 };
 
 export default function ProfilePage() {
-  // 3-QADAM: ProfilePage ichida qo'shildi
   const isMobile = useIsMobile();
 
   const { username: raw } = useParams();
@@ -72,6 +70,7 @@ export default function ProfilePage() {
 
   const [tab, setTab] = useState("images");
 
+  // Note: getToken is kept for compatibility but not used for cookie-based endpoints.
   const getToken = () => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("token");
@@ -112,10 +111,10 @@ export default function ProfilePage() {
       const json = await res.json();
       const arr = Array.isArray(json) ? json : Array.isArray(json.posts) ? json.posts : [];
       const normalized = (arr || []).map((p) => ({
-        ...p,                           // MUHIM
+        ...p,
         id: p._id ? String(p._id) : p.id,
-        user: p.user || p.username,     // MUHIM
-        username: p.username || p.user, // MUHIM
+        user: p.user || p.username,
+        username: p.username || p.user,
         likesCount: p.likesCount || 0,
         viewsCount: p.views || 0,
       }));
@@ -129,6 +128,7 @@ export default function ProfilePage() {
     }
   }, [API, username]);
 
+  // --- IMPORTANT FIXES: use credentials: 'include' (server uses httpOnly cookies) ---
   const checkFollow = useCallback(async () => {
     if (!API) {
       console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
@@ -139,17 +139,18 @@ export default function ProfilePage() {
       setIsFollowing(false);
       return false;
     }
-    const token = getToken();
-    if (!token) {
-      setIsFollowing(false);
-      return false;
-    }
+
+    // Server expects cookie; send credentials to include cookies.
     try {
       const res = await fetch(`${API}/follow/check/${encodeURIComponent(username)}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
-      if (!res.ok) throw new Error("Follow check failed");
-      const d = await res.json();
+      if (!res.ok) {
+        // if 401 or other, treat as not following
+        setIsFollowing(false);
+        return false;
+      }
+      const d = await res.json().catch(() => ({}));
       setIsFollowing(!!d.isFollowing);
       return !!d.isFollowing;
     } catch (err) {
@@ -165,25 +166,28 @@ export default function ProfilePage() {
       return;
     }
     if (!user || user.username === username) return;
-    const token = getToken();
-    if (!token) return;
 
     setFollowLoading(true);
     const prevIsFollowing = isFollowing;
     const prevFollowersCount = profile?.followers ?? 0;
 
+    // optimistic UI
     setIsFollowing(true);
     setProfile((p) => (p ? { ...p, followers: (p.followers || 0) + 1 } : p));
 
     try {
       const res = await fetch(`${API}/follow/${encodeURIComponent(username)}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include", // <-- send httpOnly cookie
       });
-      if (!res.ok) throw new Error("Follow failed");
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.msg || "Follow failed");
+      }
       await loadProfile();
     } catch (err) {
       console.error("handleFollow error:", err);
+      // rollback
       setIsFollowing(prevIsFollowing);
       setProfile((p) => (p ? { ...p, followers: prevFollowersCount } : p));
     } finally {
@@ -197,25 +201,28 @@ export default function ProfilePage() {
       return;
     }
     if (!user || user.username === username) return;
-    const token = getToken();
-    if (!token) return;
 
     setFollowLoading(true);
     const prevIsFollowing = isFollowing;
     const prevFollowersCount = profile?.followers ?? 0;
 
+    // optimistic UI
     setIsFollowing(false);
     setProfile((p) => (p ? { ...p, followers: Math.max(0, (p.followers || 1) - 1) } : p));
 
     try {
       const res = await fetch(`${API}/unfollow/${encodeURIComponent(username)}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include", // <-- send httpOnly cookie
       });
-      if (!res.ok) throw new Error("Unfollow failed");
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.msg || "Unfollow failed");
+      }
       await loadProfile();
     } catch (err) {
       console.error("handleUnfollow error:", err);
+      // rollback
       setIsFollowing(prevIsFollowing);
       setProfile((p) => (p ? { ...p, followers: prevFollowersCount } : p));
     } finally {
@@ -312,9 +319,6 @@ export default function ProfilePage() {
   const videoPosts = posts.filter((p) => p.type === "video");
   const visiblePosts = tab === "images" ? imagePosts : posts.filter((p) => p.type === "video");
 
-  const clickable = { cursor: "pointer" };
-
-  // helper to build cache-busted avatar URL
   const avatarSrc = profile?.avatar ? `${profile.avatar}?t=${Date.now()}` : "";
 
   return (
@@ -323,14 +327,12 @@ export default function ProfilePage() {
         minHeight: "100vh",
         backgroundColor: "#000",
         color: "#fff",
-        // 4-QADAM: root container paddingni shartli qildik
         padding: isMobile ? "16px" : "40px",
       }}
     >
       {/* HEADER */}
       <div
         style={{
-          // 5-QADAM: header layoutni mobile uchun column qildik
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           gap: isMobile ? 16 : 40,
@@ -344,7 +346,6 @@ export default function ProfilePage() {
         <div
           onClick={() => profile?.avatar && setAvatarOpen(true)}
           style={{
-            // 6-QADAM: avatar o'lchamini moslashtirdik (INSTAGRAM STYLE)
             width: isMobile ? 96 : 150,
             height: isMobile ? 96 : 150,
             borderRadius: "50%",
@@ -552,7 +553,6 @@ export default function ProfilePage() {
           borderTop: "1px solid #222",
           paddingTop: 30,
           display: "grid",
-          // 7-QADAM: post grid ustunlarini mobil uchun 2 ta qildik
           gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
           gap: isMobile ? 6 : 4,
         }}
@@ -635,33 +635,31 @@ export default function ProfilePage() {
       </div>
 
       <style jsx>{`
-  .profile-hover-overlay {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
+        .profile-hover-overlay {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease;
+        }
 
-  /* Desktop uchun hover */
-  @media (hover: hover) and (pointer: fine) {
-    .profile-post-item:hover .profile-hover-overlay {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  }
+        @media (hover: hover) and (pointer: fine) {
+          .profile-post-item:hover .profile-hover-overlay {
+            opacity: 1;
+            pointer-events: auto;
+          }
+        }
 
-  /* Telefon uchun overlayni butunlay o‘chiramiz */
-  @media (hover: none) and (pointer: coarse) {
-    .profile-hover-overlay {
-      display: none;
-    }
-  }
+        @media (hover: none) and (pointer: coarse) {
+          .profile-hover-overlay {
+            display: none;
+          }
+        }
 
-  .profile-hover-overlay span {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-`}</style>
+        .profile-hover-overlay span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+      `}</style>
 
       {/* EDIT PROFILE */}
       {editing && (
@@ -689,7 +687,7 @@ export default function ProfilePage() {
         <PostViewerModal posts={visiblePosts} startIndex={viewerIndex} onClose={() => setViewerOpen(false)} />
       )}
 
-      {/* AVATAR VIEWER (cache-busted src) */}
+      {/* AVATAR VIEWER */}
       {avatarOpen && <AvatarViewerModal src={avatarSrc || profile?.avatar} onClose={() => setAvatarOpen(false)} />}
     </div>
   );
