@@ -13,21 +13,26 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-          {
-            credentials: "include",
-          }
-        );
+        let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          credentials: "include"
+        });
 
-        if (!res.ok) {
-          setUser(null);
-          return;
+        if (res.status === 401) {
+          const refreshed = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+            { method: "POST", credentials: "include" }
+          );
+
+          if (refreshed.ok) {
+            res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+              credentials: "include"
+            });
+          }
         }
 
-        const data = await res.json();
-        setUser(data);
-      } catch (error) {
+        if (res.ok) setUser(await res.json());
+        else setUser(null);
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);

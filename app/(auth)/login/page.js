@@ -9,7 +9,7 @@ import { loginUser } from "@/lib/api";
 import { AuthContext } from "@/context/AuthContext";
 import "./login.css";
 
-export default function LoginPage() {
+export default function LoginPage(){
   const router = useRouter();
   const ctx = useContext(AuthContext);
   if (!ctx) return null;
@@ -34,25 +34,24 @@ export default function LoginPage() {
 
     const res = await loginUser({ username, password });
 
-    if (res.msg !== "Login muvaffaqiyatli") {
-      setMsg(res.msg || "Login xatosi");
-      return;
-    }
+if (res.msg !== "Login muvaffaqiyatli") {
+  setMsg(res.msg || "Login xatosi");
+  return;
+}
 
-    // cookie orqali userni olish
-    const me = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-      credentials: "include",
-    });
+// cookie yozilganini tekshiramiz
+const me = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+  credentials: "include"
+});
 
-    if (!me.ok) {
-      setMsg("Userni olishda xatolik");
-      return;
-    }
+if (!me.ok) {
+  setMsg("Sessiya yaratilmagan. Sahifani yangilang.");
+  return;
+}
 
-    const user = await me.json();
-    setUser(user);
-    router.push("/");
-  };
+setUser(await me.json());
+router.push("/");
+  }
 
   return (
     <div className="page">
