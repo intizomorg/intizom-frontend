@@ -15,13 +15,17 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
     setBio(profile.bio || "");
     setWebsite(profile.website || "");
     setAvatarPreview(profile.avatar || null);
+    setAvatarFile(null);
   }, [profile]);
 
   useEffect(() => {
     if (!avatarFile) return;
     const url = URL.createObjectURL(avatarFile);
     setAvatarPreview(url);
-    return () => URL.revokeObjectURL(url);
+    return () => {
+      // revoke the generated URL when avatarFile changes / component unmounts
+      URL.revokeObjectURL(url);
+    };
   }, [avatarFile]);
 
   const handleFileChange = (e) => {
@@ -29,6 +33,13 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
     if (!f) return;
     if (!f.type.startsWith("image/")) return alert("Faqat rasm tanlang");
     setAvatarFile(f);
+  };
+
+  const handleRemoveSelected = () => {
+    // reset selected file and preview back to original profile avatar (or null)
+    setAvatarFile(null);
+    setAvatarPreview(profile.avatar || null);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const handleSave = async () => {
@@ -73,29 +84,124 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
     }
   };
 
+  const getInitials = (name) => {
+    if (!name) return "";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={styles.modal}>
-        <h3>Edit profile</h3>
+        <div style={styles.header}>
+          <h3 style={styles.title}>Edit profile</h3>
+          <button aria-label="Close" style={styles.closeBtn} onClick={onClose}>
+            ×
+          </button>
+        </div>
 
-        <input type="file" ref={fileRef} hidden accept="image/*"
-          onChange={handleFileChange} />
+        <div style={styles.content}>
+          {/* LEFT: avatar preview + upload */}
+          <div style={styles.left}>
+            <div style={styles.avatarWrapper}>
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="Avatar preview"
+                  style={styles.avatarImg}
+                />
+              ) : (
+                <div style={styles.avatarPlaceholder}>
+                  {getInitials(profile.name || profile.username || "U")}
+                </div>
+              )}
+            </div>
 
-        <button onClick={() => fileRef.current.click()}>
-          Upload avatar
-        </button>
+            <input
+              type="file"
+              ref={fileRef}
+              hidden
+              accept="image/*"
+              onChange={handleFileChange}
+            />
 
-        <textarea value={bio} onChange={e => setBio(e.target.value)} />
-        <input value={website} onChange={e => setWebsite(e.target.value)} />
+            <div style={{ marginTop: 12, width: "100%", display: "flex", gap: 8, flexDirection: "column", alignItems: "stretch" }}>
+              <button
+                onClick={() => fileRef.current && fileRef.current.click()}
+                style={styles.primaryBtn}
+                type="button"
+              >
+                Upload avatar
+              </button>
 
-        <button onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save"}
-        </button>
+              <button
+                onClick={handleRemoveSelected}
+                style={styles.ghostBtn}
+                type="button"
+              >
+                Reset
+              </button>
+
+              <div style={styles.hint}>
+                Rasm PNG/JPG, 2MB gacha tavsiya etiladi.
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: inputs */}
+          <div style={styles.right}>
+            <label style={styles.label}>Bio</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell something about yourself..."
+              style={styles.textarea}
+              rows={4}
+              maxLength={320}
+            />
+
+            <div style={styles.charCounter}>{bio.length}/320</div>
+
+            <label style={{ ...styles.label, marginTop: 12 }}>Website</label>
+            <input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://"
+              style={styles.input}
+            />
+
+            <div style={styles.actions}>
+              <button
+                onClick={onClose}
+                type="button"
+                style={styles.ghostBtn}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSave}
+                type="button"
+                style={styles.primaryBtn}
+                disabled={saving}
+              >
+                {saving ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <span style={styles.spinner} /> Saving...
+                  </span>
+                ) : (
+                  "Save"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
 
 /* --------------------------
    STYLES (inline objects)
@@ -281,8 +387,6 @@ const styles = {
     animation: "spin 1s linear infinite",
     display: "inline-block",
   },
-
-  // add keyframes via injected style tag if necessary
 };
 
 /* Minimal keyframes injection (so spinner works without external CSS) */

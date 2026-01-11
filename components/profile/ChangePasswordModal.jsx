@@ -47,8 +47,9 @@ export default function ChangePasswordModal({ open, onClose }) {
         return;
       }
 
-      alert("Parol muvaffaqiyatli yangilandi");
-      onClose();
+      alert("Parol muvaffaqiyatli yangilandi. Qayta login qiling.");
+window.location.href = "/login";
+
 
       setCurrent("");
       setNext("");

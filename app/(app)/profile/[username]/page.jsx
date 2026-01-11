@@ -70,12 +70,6 @@ export default function ProfilePage() {
 
   const [tab, setTab] = useState("images");
 
-  // Note: getToken is kept for compatibility but not used for cookie-based endpoints.
-  const getToken = () => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token");
-  };
-
   const loadProfile = useCallback(async () => {
     if (!API) {
       console.error("API base URL is not configured (NEXT_PUBLIC_API_URL).");
@@ -109,7 +103,7 @@ export default function ProfilePage() {
         throw new Error("Failed to fetch user posts");
       }
       const json = await res.json();
-      const arr = Array.isArray(json) ? json : Array.isArray(json.posts) ? json.posts : [];
+      const arr = Array.isArray(json?.posts) ? json.posts : [];
       const normalized = (arr || []).map((p) => ({
         ...p,
         id: p._id ? String(p._id) : p.id,
@@ -240,7 +234,9 @@ export default function ProfilePage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${API}/profile/${encodeURIComponent(username)}/followers`);
+        const res = await fetch(`${API}/profile/${encodeURIComponent(username)}/followers`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch followers");
         const d = await res.json();
         if (!cancelled) setFollowersList(Array.isArray(d) ? d : []);
@@ -264,7 +260,9 @@ export default function ProfilePage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${API}/profile/${encodeURIComponent(username)}/following`);
+        const res = await fetch(`${API}/profile/${encodeURIComponent(username)}/following`, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch following");
         const d = await res.json();
         if (!cancelled) setFollowingList(Array.isArray(d) ? d : []);
@@ -319,7 +317,7 @@ export default function ProfilePage() {
   const videoPosts = posts.filter((p) => p.type === "video");
   const visiblePosts = tab === "images" ? imagePosts : posts.filter((p) => p.type === "video");
 
-  const avatarSrc = profile?.avatar ? `${profile.avatar}?t=${Date.now()}` : "";
+  const avatarSrc = profile?.avatar ? `${profile.avatar}?v=${profile.updatedAt || ""}` : "";
 
   return (
     <div
@@ -679,8 +677,20 @@ export default function ProfilePage() {
       <ProfileSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       {/* FOLLOW MODALS */}
-      <FollowModal open={followersOpen} onClose={() => setFollowersOpen(false)} title="followers" users={followersList} />
-      <FollowModal open={followingOpen} onClose={() => setFollowingOpen(false)} title="Following" users={followingList} />
+      <FollowModal
+  open={followingOpen}
+  onClose={() => setFollowingOpen(false)}
+  title="Following"
+  users={followingList}
+  onUnfollow={async (username) => {
+    await fetch(`${API}/unfollow/${encodeURIComponent(username)}`, {
+      method: "POST",
+      credentials: "include",
+    });
+    setFollowingList((prev) => prev.filter(u => u.username !== username));
+    setProfile(p => ({ ...p, following: Math.max(0, p.following - 1) }));
+  }}
+/>
 
       {/* POST VIEWER */}
       {viewerOpen && (
