@@ -1,12 +1,11 @@
- import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const protectedPaths = ["/upload", "/messages", "/profile", "/admin"];
 
 export function middleware(request) {
-  const token = request.cookies.get("token")?.value;
+  const accessToken = request.cookies.get("accessToken")?.value;
   const { pathname } = request.nextUrl;
 
-  // Static va auth sahifalarni o'tkazib yuboramiz
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
@@ -17,16 +16,14 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  // Root sahifa ham himoyalangan
-  if (pathname === "/" && !token) {
+  if (pathname === "/" && !accessToken) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // Himoyalangan yo‘llar
   if (protectedPaths.some(p => pathname.startsWith(p))) {
-    if (!token) {
+    if (!accessToken) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);
