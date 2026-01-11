@@ -9,46 +9,29 @@ export default function Feed() {
 
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL;
-
-    if (!API) {
-      console.error("NEXT_PUBLIC_API_URL is not set");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
+    if (!API) return console.error("NEXT_PUBLIC_API_URL is not set");
 
     fetch(`${API}/posts`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include"
     })
-      .then((r) => r.json())
-      .then((data) => {
-        const arr = Array.isArray(data)
-          ? data
-          : Array.isArray(data.posts)
-          ? data.posts
-          : [];
-
-        setPosts(
-          arr.map((p) => ({
-            ...p,
-            id: String(p.id || p._id),
-          }))
-        );
+      .then(r => r.json())
+      .then(data => {
+        const arr = Array.isArray(data.posts) ? data.posts : [];
+        setPosts(arr.map(p => ({ ...p, id: String(p.id || p._id) })));
       })
       .catch(console.error);
   }, []);
 
-  const handleDeleted = (id) => {
-    setPosts((prev) => prev.filter((p) => p.id !== id));
+  const handleDeleted = id => {
+    setPosts(prev => prev.filter(p => p.id !== id));
   };
 
   return (
     <div className="feed-wrapper">
       <div className="feed-center">
-        {Array.isArray(posts) &&
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} onDeleted={handleDeleted} />
-          ))}
+        {posts.map(post => (
+          <PostCard key={post.id} post={post} onDeleted={handleDeleted} />
+        ))}
       </div>
 
       <RightPanel />

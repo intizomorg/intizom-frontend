@@ -14,9 +14,9 @@ export default function PostDetailsPage() {
 
   async function loadPost() {
     try {
-      const res = await fetch(`${API}/posts/${id}`);
+      const res = await fetch(`${API}/posts/${id}`, { credentials: "include" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg);
+      if (!res.ok) throw new Error();
       setPost(data);
     } catch {
       setPost(null);
@@ -27,9 +27,8 @@ export default function PostDetailsPage() {
 
   async function loadComments() {
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`${API}/posts/${id}/comments`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        credentials: "include"
       });
       const data = await res.json();
       setComments(data.comments || []);
@@ -45,17 +44,13 @@ export default function PostDetailsPage() {
   }, [id]);
 
   async function sendComment() {
-    const token = localStorage.getItem("token");
-    if (!token) return setMsg("Login qiling");
     if (!text.trim()) return setMsg("Bo‘sh komment bo‘lishi mumkin emas");
 
     try {
       const res = await fetch(`${API}/posts/${id}/comment`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text })
       });
 
@@ -101,7 +96,9 @@ export default function PostDetailsPage() {
             </div>
           </div>
         ))}
-        {comments.length === 0 && <p className="text-gray-400">Hali komment yo‘q</p>}
+        {comments.length === 0 && (
+          <p className="text-gray-400">Hali komment yo‘q</p>
+        )}
       </div>
 
       <textarea

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
-// Use NEXT_PUBLIC_API_URL from environment (must be set in your .env)
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function EditProfileModal({ profile, onClose, onSaved }) {
@@ -11,93 +10,61 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
   const [avatarPreview, setAvatarPreview] = useState(profile.avatar || null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
+
   useEffect(() => {
     setBio(profile.bio || "");
     setWebsite(profile.website || "");
     setAvatarPreview(profile.avatar || null);
   }, [profile]);
 
-  const token = localStorage.getItem("token");
-  const BIO_MAX = 160;
-
-  // create / revoke preview URL for selected avatar file
   useEffect(() => {
     if (!avatarFile) return;
     const url = URL.createObjectURL(avatarFile);
     setAvatarPreview(url);
-    return () => {
-      URL.revokeObjectURL(url);
-    };
+    return () => URL.revokeObjectURL(url);
   }, [avatarFile]);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    // optional: basic size/type check (UI-only)
-    if (!f.type.startsWith("image/")) {
-      alert("Iltimos, rasm faylini tanlang");
-      return;
-    }
-    if (f.size > 5 * 1024 * 1024) {
-      // 5MB limit for UX (doesn't change upload logic)
-      if (!confirm("Fayl juda katta (5MB dan katta). Davom etilsinmi?")) return;
-    }
+    if (!f.type.startsWith("image/")) return alert("Faqat rasm tanlang");
     setAvatarFile(f);
   };
 
-  const removeAvatarSelection = () => {
-    setAvatarFile(null);
-    setAvatarPreview(profile.avatar || null);
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
   const handleSave = async () => {
-    if (!token) return;
-
     try {
       setSaving(true);
 
       let avatar = profile.avatar;
 
-      // 1️⃣ AVATAR UPLOAD (uses NEXT_PUBLIC_API_URL)
       if (avatarFile) {
         const fd = new FormData();
         fd.append("avatar", avatarFile);
 
         const r = await fetch(`${API}/upload/avatar`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
+          credentials: "include",
+          body: fd
         });
 
-        if (!r.ok) throw new Error("Avatar upload failed");
-
+        if (!r.ok) throw new Error("Avatar yuklashda xatolik");
         const d = await r.json();
         avatar = d.avatar;
       }
 
-      // 2️⃣ BIO + WEBSITE → BACKEND (uses NEXT_PUBLIC_API_URL)
       const res = await fetch(`${API}/profile`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-  bio: bio ?? "",
-  website: (website || "").trim(),
-}),
-
+          bio: bio || "",
+          website: website || ""
+        })
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.msg || "Profile update failed");
-      }
+      if (!res.ok) throw new Error("Profilni saqlashda xatolik");
 
-      // 3️⃣ OTA-ONA PROFILNI QAYTA O‘QISIN
       await onSaved({ avatar });
-
       onClose();
     } catch (e) {
       alert(e.message || "Saqlashda xatolik");
@@ -107,145 +74,28 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Edit profile"
-      onClick={onClose}
-      style={styles.overlay}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={styles.modal}
-      >
-        {/* Header */}
-        <div style={styles.header}>
-          <h3 style={styles.title}>Edit profile</h3>
-          <button
-            aria-label="Close"
-            onClick={onClose}
-            style={styles.closeBtn}
-            title="Close"
-          >
-            ×
-          </button>
-        </div>
+    <div style={styles.overlay} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={styles.modal}>
+        <h3>Edit profile</h3>
 
-        <div style={styles.content}>
-          {/* LEFT: Avatar preview & controls */}
-          <div style={styles.left}>
-            <div style={styles.avatarWrapper}>
-              {avatarPreview ? (
-                <img
-                  src={avatarPreview}
-                  alt="avatar preview"
-                  style={styles.avatarImg}
-                />
-              ) : (
-                <div style={styles.avatarPlaceholder}>
-                  {profile.username?.[0]?.toUpperCase() || "U"}
-                </div>
-              )}
-            </div>
+        <input type="file" ref={fileRef} hidden accept="image/*"
+          onChange={handleFileChange} />
 
-            <div style={{ marginTop: 12, width: "100%" }}>
-              <label style={styles.fileLabel}>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current && fileRef.current.click()}
-                  style={{ ...styles.button, width: "100%", marginBottom: 8 }}
-                >
-                  Upload avatar
-                </button>
-              </label>
+        <button onClick={() => fileRef.current.click()}>
+          Upload avatar
+        </button>
 
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={removeAvatarSelection}
-                  style={{ ...styles.ghostBtn, flex: 1 }}
-                >
-                  Reset
-                </button>
-                <div style={{ flex: 2, textAlign: "right", color: "#999", fontSize: 12 }}>
-                  {avatarFile ? avatarFile.name : profile.avatar ? "Current avatar" : "No avatar"}
-                </div>
-              </div>
-            </div>
-          </div>
+        <textarea value={bio} onChange={e => setBio(e.target.value)} />
+        <input value={website} onChange={e => setWebsite(e.target.value)} />
 
-          {/* RIGHT: Inputs */}
-          <div style={styles.right}>
-            <div style={{ marginBottom: 12 }}>
-              <label style={styles.label}>Bio</label>
-              <textarea
-                maxLength={BIO_MAX}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell the world about yourself"
-                style={styles.textarea}
-                rows={4}
-                aria-label="Bio"
-              />
-              <div style={styles.charCounter}>
-                {bio.length}/{BIO_MAX}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 6 }}>
-              <label style={styles.label}>Website</label>
-              <input
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://your-site.com"
-                style={styles.input}
-                aria-label="Website"
-              />
-              <div style={styles.hint}>Include https:// for external links</div>
-            </div>
-
-            {/* Actions */}
-            <div style={styles.actions}>
-              <button
-                onClick={onClose}
-                style={{ ...styles.ghostBtn, minWidth: 110 }}
-                aria-label="Cancel"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                style={{
-                  ...styles.primaryBtn,
-                  minWidth: 110,
-                  opacity: saving ? 0.85 : 1,
-                  cursor: saving ? "wait" : "pointer",
-                }}
-                aria-label="Save"
-              >
-                {saving ? (
-                  <span style={styles.spinner} aria-hidden />
-                ) : null}
-                <span style={{ marginLeft: saving ? 8 : 0 }}>
-                  {saving ? "Saving..." : "Save"}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <button onClick={handleSave} disabled={saving}>
+          {saving ? "Saving..." : "Save"}
+        </button>
       </div>
     </div>
   );
 }
+
 
 /* --------------------------
    STYLES (inline objects)

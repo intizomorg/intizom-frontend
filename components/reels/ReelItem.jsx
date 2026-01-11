@@ -4,13 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 /**
- * ReelItem — final, production-ready
- * - Uses "100svh" / "100vw" for consistent fullscreen on mobile/desktop
- * - Autoplay for the active visible reel (threshold 0.6)
- * - Optimistic like toggle with rollback
- * - Comments loaded when sheet opens; sheet slides from bottom (85svh)
- * - Guards when API or token missing
- * - Prefer post.user / post.userId for follow endpoints
+ * ReelItem — cookie-based auth bilan moslangan to'liq komponent
+ * - uses credentials: "include" for all auth requests
+ * - auto refresh on 401 via /auth/refresh (one retry)
+ * - preserves optimistic like, comments sheet, follow/unfollow, etc.
  */
 
 export default function ReelItem({ post }) {
@@ -23,7 +20,6 @@ export default function ReelItem({ post }) {
     return null;
   }
 
-  // API base (must be set in environment)
   const API = typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_URL
     ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
     : "";
@@ -65,7 +61,7 @@ export default function ReelItem({ post }) {
   const [likesCount, setLikesCount] = useState(Number(post.likesCount ?? post.likes ?? 0));
   const [views, setViews] = useState(Number(post.viewsCount ?? post.views ?? 0));
 
-  // global defaults (do not overwrite on each mount)
+  // global defaults
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.__REELS_MUTED__ === undefined) window.__REELS_MUTED__ = false;
@@ -73,7 +69,7 @@ export default function ReelItem({ post }) {
     setReelsMuted(Boolean(window.__REELS_MUTED__));
   }, []);
 
-  // iOS/Android overscroll mitigation (safe attempt)
+  // overscroll mitigation
   useEffect(() => {
     try {
       if (typeof document !== "undefined" && document.body) {
@@ -86,31 +82,61 @@ export default function ReelItem({ post }) {
     } catch {}
   }, []);
 
-  // fetch follow state if API + token exist
+  // ---------- Helper: apiFetch (credentials + refresh on 401) ----------
+  const apiFetch = useCallback(
+    async (endpoint, options = {}, retry = true) => {
+      if (!API) throw new Error("API not configured");
+      const url = `${API}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+      const merged = {
+        credentials: "include",
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+        },
+      };
+
+      let res;
+      try {
+        res = await fetch(url, merged);
+      } catch (err) {
+        throw err;
+      }
+
+      if (res.status === 401 && retry) {
+        // attempt refresh once
+        try {
+          await fetch(`${API}/auth/refresh`, { method: "POST", credentials: "include" });
+          // retry original request once
+          return apiFetch(endpoint, options, false);
+        } catch {
+          return res;
+        }
+      }
+
+      return res;
+    },
+    [API]
+  );
+
+  // fetch follow state
   useEffect(() => {
     if (!followTarget || !API || typeof window === "undefined") return;
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     let mounted = true;
     (async () => {
       try {
         const idStr = encodeURIComponent(String(followTarget));
-        const res = await fetch(`${API}/follow/check/${idStr}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!mounted || !res.ok) return;
+        const res = await apiFetch(`/follow/check/${idStr}`, { method: "GET" }, true);
+        if (!mounted || !res || !res.ok) return;
         const data = await res.json().catch(() => ({}));
         if (typeof data?.isFollowing === "boolean") setIsFollowing(Boolean(data.isFollowing));
         else if (typeof data?.following === "boolean") setIsFollowing(Boolean(data.following));
         else if (typeof data?.is_following === "boolean") setIsFollowing(Boolean(data.is_following));
-      } catch {}
+      } catch {
+        // ignore
+      }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [followTarget, API]);
+    return () => { mounted = false; };
+  }, [followTarget, API, apiFetch]);
 
   // comments: load when open
   useEffect(() => {
@@ -125,7 +151,7 @@ export default function ReelItem({ post }) {
 
     (async () => {
       try {
-        const res = await fetch(`${API}/posts/${encodeURIComponent(post.id)}/comments`);
+        const res = await apiFetch(`/posts/${encodeURIComponent(post.id)}/comments`, { method: "GET" }, true);
         if (!mounted) return;
         if (!res.ok) {
           setComments([]);
@@ -151,46 +177,22 @@ export default function ReelItem({ post }) {
       }
     })();
 
-    return () => {
-      mounted = false;
-    };
-  }, [commentsOpen, post.id, API]);
+    return () => { mounted = false; };
+  }, [commentsOpen, post.id, API, apiFetch]);
 
-  // Seen tracking & intersection observer autoplay
-  const SEEN_KEY = "seen_reels_v1";
-  const getSeenSet = useCallback(() => {
-    try {
-      const raw = (typeof window !== "undefined" && sessionStorage.getItem(SEEN_KEY)) || null;
-      return new Set(raw ? JSON.parse(raw) : []);
-    } catch {
-      return new Set();
-    }
-  }, []);
-
-  const markSeen = useCallback((id) => {
-    try {
-      const set = getSeenSet();
-      set.add(id);
-      sessionStorage.setItem(SEEN_KEY, JSON.stringify([...set]));
-    } catch {}
-  }, [getSeenSet]);
-
+  // Intersection observer autoplay
   useEffect(() => {
     const v = videoRef.current;
     const container = containerRef.current;
     if (!v || !container) return;
 
-    // root is strictly the .reels-feed container
     const rootElement = typeof document !== "undefined" ? document.querySelector(".reels-feed") : null;
 
     const io = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
         if (!e) return;
-
         const ratio = e.intersectionRatio ?? 0;
-
-        // If the panel is less than 60% visible — pause it and bail out.
         if (ratio < 0.6) {
           try { v.pause(); } catch {}
           setIsPlaying(false);
@@ -198,7 +200,6 @@ export default function ReelItem({ post }) {
           return;
         }
 
-        // Only when >= 0.6 do we activate this reel.
         if (window.__ACTIVE_REEL_VIDEO__ && window.__ACTIVE_REEL_VIDEO__ !== v) {
           try {
             window.__ACTIVE_REEL_VIDEO__.pause();
@@ -208,16 +209,14 @@ export default function ReelItem({ post }) {
 
         window.__ACTIVE_REEL_VIDEO__ = v;
         v.muted = Boolean(window.__REELS_MUTED__ === true);
-        v.play().then(() => setIsPlaying(true)).catch(() => { /* autoplay blocked */ });
-
-        // mark seen...
+        v.play().then(() => setIsPlaying(true)).catch(() => {});
       },
-      { root: rootElement, threshold: [0.6] }  /* use array to ensure intersectionRatio is reported reliably */
+      { root: rootElement, threshold: [0.6] }
     );
 
     io.observe(container);
     return () => io.disconnect();
-  }, [post.id, API, getSeenSet, markSeen]);
+  }, [post.id]);
 
   // cleanup timers & pause video on unmount
   useEffect(() => {
@@ -235,13 +234,13 @@ export default function ReelItem({ post }) {
     };
   }, []);
 
-  // Like toggle (single optimistic flow with rollback)
+  // Like toggle (optimistic) using apiFetch
   const toggleLike = useCallback(
     async (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (!token) {
-        alert("Iltimos, tizimga kiring.");
+
+      if (!API) {
+        alert("Server manzili (NEXT_PUBLIC_API_URL) sozlanmagan.");
         return;
       }
 
@@ -249,56 +248,45 @@ export default function ReelItem({ post }) {
       setLiked(!prev);
       setLikesCount((c) => (prev ? Math.max(0, c - 1) : c + 1));
 
-      if (!API) {
-        // rollback if no API
-        setLiked(prev);
-        setLikesCount((c) => (prev ? c + 1 : Math.max(0, c - 1)));
-        return;
-      }
-
       try {
         const endpoint = prev
-          ? `${API}/posts/${encodeURIComponent(post.id)}/unlike`
-          : `${API}/posts/${encodeURIComponent(post.id)}/like`;
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+          ? `/posts/${encodeURIComponent(post.id)}/unlike`
+          : `/posts/${encodeURIComponent(post.id)}/like`;
+        const res = await apiFetch(endpoint, { method: "POST" }, true);
         if (!res.ok) {
           // rollback on failure
           setLiked(prev);
           setLikesCount((c) => (prev ? c + 1 : Math.max(0, c - 1)));
+          // Optionally show message for unauthorized
+          if (res.status === 401) alert("Iltimos, tizimga kiring.");
         }
       } catch {
         setLiked(prev);
         setLikesCount((c) => (prev ? c + 1 : Math.max(0, c - 1)));
+        alert("Xatolik yuz berdi — internet yoki server bilan bog'lanmadi.");
       }
     },
-    [API, liked, post.id]
+    [API, liked, post.id, apiFetch]
   );
 
-  // submit comment (server single source)
+  // submit comment
   const submitReelComment = useCallback(async () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) {
-      alert("Iltimos, tizimga kiring.");
-      return;
-    }
     if (!commentText.trim()) return;
+    if (!API) { alert("Server manzili sozlanmagan."); return; }
 
     setCommentSubmitting(true);
     try {
-      if (!API) throw new Error("API not configured");
-      const res = await fetch(`${API}/posts/${encodeURIComponent(post.id)}/comment`, {
+      const res = await apiFetch(`/posts/${encodeURIComponent(post.id)}/comment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: commentText.trim() }),
-      });
+      }, true);
+
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        // re-fetch comments as single source of truth
+        // re-fetch comments
         try {
-          const fresh = await fetch(`${API}/posts/${encodeURIComponent(post.id)}/comments`);
+          const fresh = await apiFetch(`/posts/${encodeURIComponent(post.id)}/comments`, { method: "GET" }, true);
           if (fresh.ok) {
             const payload = await fresh.json().catch(() => ({}));
             const list = Array.isArray(payload.comments) ? payload.comments : [];
@@ -312,6 +300,7 @@ export default function ReelItem({ post }) {
               } catch {}
             }, 50);
           } else {
+            // fallback: if server returned comment in response
             if (data?.comment) {
               setComments((p) => [...p, data.comment]);
               setCommentText("");
@@ -328,14 +317,15 @@ export default function ReelItem({ post }) {
           }
         }
       } else {
-        alert(data.msg || "Komment yuborilmadi");
+        if (res.status === 401) alert("Iltimos, tizimga kiring.");
+        else alert(data.msg || "Komment yuborilmadi");
       }
     } catch {
       alert("Serverga ulanishda xatolik");
     } finally {
       setCommentSubmitting(false);
     }
-  }, [API, commentText, post.id]);
+  }, [API, commentText, post.id, apiFetch]);
 
   // pointer up: single tap = play/pause, double tap = like
   const handlePointerUp = (e) => {
@@ -349,11 +339,7 @@ export default function ReelItem({ post }) {
       setOverlayHeart(true);
       setTimeout(() => setOverlayHeart(false), 650);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (!token) {
-        alert("Iltimos, tizimga kiring.");
-        return;
-      }
+      // double-tap => like
       toggleLike();
       return;
     }
@@ -394,38 +380,28 @@ export default function ReelItem({ post }) {
   // follow/unfollow
   const toggleFollow = useCallback(async (e) => {
     if (e && e.stopPropagation) e.stopPropagation();
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) {
-      alert("Iltimos, tizimga kiring.");
-      return;
-    }
     if (!followTarget) return;
+    if (!API) { alert("Server manzili sozlanmagan."); return; }
 
     setFollowLoading(true);
     const prev = isFollowing;
     setIsFollowing(!prev);
 
-    if (!API) {
-      // rollback
-      setIsFollowing(prev);
-      setFollowLoading(false);
-      return;
-    }
-
     try {
       const idStr = encodeURIComponent(String(followTarget));
-      const endpoint = prev ? `${API}/unfollow/${idStr}` : `${API}/follow/${idStr}`;
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) setIsFollowing(prev);
+      const endpoint = prev ? `/unfollow/${idStr}` : `/follow/${idStr}`;
+      const res = await apiFetch(endpoint, { method: "POST" }, true);
+      if (!res.ok) {
+        setIsFollowing(prev);
+        if (res.status === 401) alert("Iltimos, tizimga kiring.");
+      }
     } catch {
       setIsFollowing(prev);
+      alert("Server bilan bog'lanib bo'lmadi.");
     } finally {
       setFollowLoading(false);
     }
-  }, [API, followTarget, isFollowing]);
+  }, [API, followTarget, isFollowing, apiFetch]);
 
   return (
     <div
@@ -456,7 +432,6 @@ export default function ReelItem({ post }) {
         />
       </div>
 
-      {/* mute/unmute */}
       <button
         onClick={toggleGlobalMute}
         aria-label={reelsMuted ? "Unmute reels" : "Mute reels"}
@@ -477,7 +452,6 @@ export default function ReelItem({ post }) {
         {reelsMuted ? "Unmute" : "Mute"}
       </button>
 
-      {/* overlay heart */}
       {overlayHeart && (
         <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 30 }}>
           <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -486,7 +460,6 @@ export default function ReelItem({ post }) {
         </div>
       )}
 
-      {/* right-side actions */}
       <div style={{ position: "absolute", right: 12, bottom: "18%", display: "flex", flexDirection: "column", gap: 18, zIndex: 20, alignItems: "center" }} aria-hidden>
         <button
           onClick={(e) => { e.stopPropagation(); toggleLike(e); }}
@@ -511,7 +484,6 @@ export default function ReelItem({ post }) {
         </div>
       </div>
 
-      {/* left-bottom info */}
       <div style={{ position: "absolute", left: 12, bottom: 20, color: "#fff", zIndex: 40, maxWidth: "72%" }} aria-hidden>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link href={`/profile/${profilePath}`} onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, color: "#fff", textDecoration: "none", fontWeight: 600 }}>
@@ -557,7 +529,7 @@ export default function ReelItem({ post }) {
             background: "rgba(0,0,0,0.6)",
             zIndex: 100,
             display: "flex",
-            alignItems: "flex-end", // sheet from bottom
+            alignItems: "flex-end",
             justifyContent: "center",
             padding: 0,
           }}

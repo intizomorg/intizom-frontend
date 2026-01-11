@@ -15,26 +15,14 @@ export default function ChangePasswordModal({ open, onClose }) {
     e.preventDefault();
     setError("");
 
-    if (!current || !next || !confirm) {
-      setError("Barcha maydonlarni to‘ldiring");
-      return;
-    }
+    if (!current || !next || !confirm)
+      return setError("Barcha maydonlarni to‘ldiring");
 
-    if (next.length < 6) {
-      setError("Yangi parol kamida 6 belgidan iborat bo‘lishi kerak");
-      return;
-    }
+    if (next.length < 6)
+      return setError("Yangi parol kamida 6 belgidan iborat bo‘lishi kerak");
 
-    if (next !== confirm) {
-      setError("Yangi parollar mos emas");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Avtorizatsiya topilmadi");
-      return;
-    }
+    if (next !== confirm)
+      return setError("Yangi parollar mos emas");
 
     try {
       setLoading(true);
@@ -43,18 +31,12 @@ export default function ChangePasswordModal({ open, onClose }) {
         `${process.env.NEXT_PUBLIC_API_URL}/auth/change-password`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-         body: JSON.stringify({
-  currentPassword: current,
-  newPassword: next,
-}),
-
-
-
-
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentPassword: current,
+            newPassword: next,
+          }),
         }
       );
 
@@ -68,11 +50,10 @@ export default function ChangePasswordModal({ open, onClose }) {
       alert("Parol muvaffaqiyatli yangilandi");
       onClose();
 
-      // reset
       setCurrent("");
       setNext("");
       setConfirm("");
-    } catch (err) {
+    } catch {
       setError("Server bilan bog‘lanib bo‘lmadi");
     } finally {
       setLoading(false);
@@ -85,51 +66,29 @@ export default function ChangePasswordModal({ open, onClose }) {
         <h3 style={title}>Change password</h3>
 
         <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            placeholder="Current password"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            style={input}
-          />
+          <input type="password" placeholder="Current password" value={current}
+            onChange={(e) => setCurrent(e.target.value)} style={input} />
 
-          <input
-            type="password"
-            placeholder="New password"
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            style={input}
-          />
+          <input type="password" placeholder="New password" value={next}
+            onChange={(e) => setNext(e.target.value)} style={input} />
 
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            style={input}
-          />
+          <input type="password" placeholder="Confirm new password" value={confirm}
+            onChange={(e) => setConfirm(e.target.value)} style={input} />
 
           {error && <div style={errorText}>{error}</div>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...saveBtn,
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
+          <button type="submit" disabled={loading}
+            style={{ ...saveBtn, opacity: loading ? 0.6 : 1 }}>
             {loading ? "Saving..." : "Save"}
           </button>
         </form>
 
-        <button style={cancelBtn} onClick={onClose}>
-          Cancel
-        </button>
+        <button style={cancelBtn} onClick={onClose}>Cancel</button>
       </div>
     </div>
   );
 }
+
 
 /* ================= STYLES ================= */
 

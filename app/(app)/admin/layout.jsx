@@ -10,23 +10,29 @@ export default function AdminLayout({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.replace("/");
-      return;
-    }
+    async function checkAdmin() {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+          { credentials: "include" }   // 🔐 cookie orqali
+        );
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(user => {
+        if (!res.ok) {
+          router.replace("/");
+          return;
+        }
+
+        const user = await res.json();
         if (!user || user.role !== "admin") {
           router.replace("/");
         }
-      })
-      .catch(() => router.replace("/"));
-  }, []);
+      } catch {
+        router.replace("/");
+      }
+    }
+
+    checkAdmin();
+  }, [router]);
 
   return children;
 }
