@@ -3,9 +3,9 @@
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-import { useEffect, useState } from "react";
-
-const ADMIN_API = process.env.NEXT_PUBLIC_API_URL;
+import { useEffect, useState, useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
   const [posts, setPosts] = useState([]);
@@ -15,11 +15,20 @@ export default function AdminPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
 
+  const { user } = useContext(AuthContext);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      router.replace("/");
+    }
+  }, [user]);
+
   async function loadPosts() {
     setMsg("");
     setLoading(true);
     try {
-      const res = await fetch(`${ADMIN_API}/admin/posts`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/posts`, {
         credentials: "include"
       });
 
@@ -51,7 +60,7 @@ export default function AdminPage() {
     setMsg("");
 
     try {
-      const res = await fetch(`${ADMIN_API}/admin/posts/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/posts/${id}`, {
         method: "DELETE",
         credentials: "include"
       });
@@ -80,7 +89,7 @@ export default function AdminPage() {
     setMsg("");
 
     try {
-      const res = await fetch(`${ADMIN_API}/admin/posts/${id}/approve`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/posts/${id}/approve`, {
         method: "POST",
         credentials: "include"
       });
