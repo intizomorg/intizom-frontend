@@ -12,10 +12,14 @@ export default function SearchPage() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Load history on mount
+  // Load history
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    setHistory(saved);
+    try {
+      const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      setHistory(saved);
+    } catch {
+      setHistory([]);
+    }
   }, []);
 
   // Search users
@@ -30,47 +34,45 @@ export default function SearchPage() {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/search?q=${encodeURIComponent(query)}`,
+          {
+            signal: controller.signal,
+            credentials: "include"   // 🔐 cookie bilan yuboriladi
+          }
+        );
 
-const res = await fetch(
-  `${process.env.NEXT_PUBLIC_API_URL}/users/search?q=${encodeURIComponent(query)}`,
-  {
-    signal: controller.signal,
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  }
-);
-
+        if (!res.ok) {
+          setUsers([]);
+          return;
+        }
 
         const data = await res.json();
-        setUsers(data);
+        setUsers(Array.isArray(data) ? data : []);
       } catch (e) {
-        if (e.name !== "AbortError") console.error(e);
+        if (e.name !== "AbortError") console.error("Search error:", e);
       } finally {
         setLoading(false);
       }
     };
 
     const delay = setTimeout(fetchUsers, 400);
+
     return () => {
       clearTimeout(delay);
       controller.abort();
     };
   }, [query]);
 
-  // Save to history
   const addToHistory = (user) => {
-    let newHistory = history.filter((u) => u.id !== user.id);
-    newHistory.unshift(user);
-    newHistory = newHistory.slice(0, HISTORY_LIMIT);
-
+    const filtered = history.filter(u => u.id !== user.id);
+    const newHistory = [user, ...filtered].slice(0, HISTORY_LIMIT);
     setHistory(newHistory);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
   };
 
   const removeFromHistory = (id) => {
-    const filtered = history.filter((u) => u.id !== id);
+    const filtered = history.filter(u => u.id !== id);
     setHistory(filtered);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
   };
@@ -85,40 +87,34 @@ const res = await fetch(
       />
 
       <div className="search-results">
-        {/* SEARCH RESULT */}
         {query && (
           <>
             {loading && <p>Loading...</p>}
 
-            {users.map((user) => (
+            {!loading && users.length === 0 && (
+              <p className="no-result">Foydalanuvchi topilmadi</p>
+            )}
+
+            {users.map(user => (
               <UserResult
                 key={user.id}
                 user={user}
                 onSelect={() => addToHistory(user)}
               />
             ))}
-
-            {!loading && users.length === 0 && (
-              <p className="no-result">Foydalanuvchi topilmadi</p>
-            )}
           </>
         )}
 
-        {/* SEARCH HISTORY */}
         {!query && history.length > 0 && (
           <>
-            <div style={{ padding: "10px", fontWeight: 600 }}>
+            <div style={{ padding: 10, fontWeight: 600 }}>
               Qidiruv tarixi
             </div>
 
-            {history.map((user) => (
+            {history.map(user => (
               <div
                 key={user.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
               >
                 <UserResult user={user} />
                 <button
@@ -128,7 +124,7 @@ const res = await fetch(
                     border: "none",
                     color: "#888",
                     cursor: "pointer",
-                    marginRight: 10,
+                    marginRight: 10
                   }}
                 >
                   ✕
