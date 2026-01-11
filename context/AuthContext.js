@@ -3,7 +3,7 @@
 import { createContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -11,11 +11,13 @@ export default function AuthProvider({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    const load = async () => {
+    const loadUser = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-          { credentials: "include" }
+          {
+            credentials: "include",
+          }
         );
 
         if (!res.ok) {
@@ -25,24 +27,26 @@ export default function AuthProvider({ children }) {
 
         const data = await res.json();
         setUser(data);
-      } catch (err) {
+      } catch (error) {
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    load();
+    loadUser();
   }, []);
 
   const logout = async () => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    setUser(null);
-    router.push("/login");
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      setUser(null);
+      router.push("/login");
+    }
   };
 
   if (loading) return null;
@@ -52,4 +56,4 @@ export default function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-} 
+}
