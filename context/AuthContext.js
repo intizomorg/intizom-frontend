@@ -5,53 +5,62 @@ import { useRouter } from "next/navigation";
 
 export const AuthContext = createContext(null);
 
+const API = process.env.NEXT_PUBLIC_API_URL;
+
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadUser = async () => {
       try {
-        let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-          credentials: "include"
+        let res = await fetch(`${API}/auth/me`, {
+          credentials: "include",
         });
 
+        // agar accessToken muddati o‘tgan bo‘lsa → refresh qilamiz
         if (res.status === 401) {
-          const refreshed = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-            { method: "POST", credentials: "include" }
-          );
+          const refresh = await fetch(`${API}/auth/refresh`, {
+            method: "POST",
+            credentials: "include",
+          });
 
-          if (refreshed.ok) {
-            res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-              credentials: "include"
+          if (refresh.ok) {
+            res = await fetch(`${API}/auth/me`, {
+              credentials: "include",
             });
           }
         }
 
-        if (res.ok) setUser(await res.json());
-        else setUser(null);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setUser(data);
+        } else {
+          setUser(null);
+        }
       } catch {
         setUser(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadUser();
+    return () => { cancelled = true; };
   }, []);
 
   const logout = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+      await fetch(`${API}/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
-    } finally {
-      setUser(null);
-      router.push("/login");
-    }
+    } catch {}
+    setUser(null);
+    router.replace("/login");
   };
 
   if (loading) return null;
