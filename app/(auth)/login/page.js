@@ -14,22 +14,7 @@ export default function LoginPage(){
   const ctx = useContext(AuthContext);
   if (!ctx) return null;
   const { setUser } = ctx;
- useEffect(() => {
-  (async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        credentials: "include"
-      });
-
-      if (res.ok) {
-        const u = await res.json();
-        setUser(u);
-        router.replace("/");
-      }
-    } catch {}
-  })();
-}, []);
-
+ 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
