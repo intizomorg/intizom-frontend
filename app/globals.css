@@ -1190,3 +1190,96 @@ body.page--reels .app-main {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
+/* ================= MOBILE REELS — YouTube Shorts style frame ================= */
+@media (max-width: 1023px) {
+  body.page--reels {
+    overflow: hidden !important;
+    height: 100%;
+  }
+
+  /* Agar sizda fixed topbar bo'lsa (56px) */
+  :root {
+    --reels-topbar: 56px;
+    --reels-bottombar: 56px; /* pastki app nav bo'lsa */
+  }
+
+  /* Agar sizning pastki nav haqiqatan 64/72 bo'lsa, shu yerda to'g'rilang */
+  /* --reels-bottombar: 64px; */
+
+  body.page--reels .app-shell,
+  body.page--reels .app-main {
+    height: 100dvh;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Reels feed — ekranni to'liq egallasin */
+  body.page--reels .reels-feed {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    width: 100vw;
+
+    overflow-y: scroll;
+    overscroll-behavior-y: contain;
+
+    scroll-snap-type: y mandatory;
+    scroll-behavior: auto;
+
+    /* iOS momentum scroll ko'pincha "skip" qiladi — siz to'g'ri qilgansiz */
+    -webkit-overflow-scrolling: auto;
+
+    /* faqat vertikal swipe */
+    touch-action: pan-y;
+
+    background: #000;
+
+    /* Safe area + top/bottom UI uchun joy */
+    padding-top: calc(var(--reels-topbar) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--reels-bottombar) + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+  }
+
+  /* Har bir panel real ko'rinadigan balandlikka teng bo'lsin */
+  body.page--reels .reel-panel {
+    height: calc(100dvh - var(--reels-topbar) - var(--reels-bottombar) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: calc(100dvh - var(--reels-topbar) - var(--reels-bottombar) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    width: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  body.page--reels .reel-item {
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* Mobil: Shorts kabi cover bo'lsin */
+  body.page--reels .reel-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+  }
+
+  /* Reels sahifasida sidebar va keraksiz panellarni yashirish */
+  body.page--reels .app-sidebar,
+  body.page--reels .left-nav,
+  body.page--reels .right-panel {
+    display: none !important;
+  }
+
+  body.page--reels .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
