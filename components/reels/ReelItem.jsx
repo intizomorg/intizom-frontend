@@ -20,9 +20,10 @@ export default function ReelItem({ post }) {
     return null;
   }
 
-  const API = typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_URL
-    ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
-    : "";
+  const API =
+    typeof process !== "undefined" && process?.env?.NEXT_PUBLIC_API_URL
+      ? String(process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "")
+      : "";
 
   const videoUrl = post.media[0].url;
   const rawUser = post.user;
@@ -58,14 +59,19 @@ export default function ReelItem({ post }) {
   const [overlayHeart, setOverlayHeart] = useState(false);
 
   const [liked, setLiked] = useState(Boolean(post.liked));
-  const [likesCount, setLikesCount] = useState(Number(post.likesCount ?? post.likes ?? 0));
-  const [views, setViews] = useState(Number(post.viewsCount ?? post.views ?? 0));
+  const [likesCount, setLikesCount] = useState(
+    Number(post.likesCount ?? post.likes ?? 0)
+  );
+  const [views, setViews] = useState(
+    Number(post.viewsCount ?? post.views ?? 0)
+  );
 
   // global defaults
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.__REELS_MUTED__ === undefined) window.__REELS_MUTED__ = false;
-    if (window.__ACTIVE_REEL_VIDEO__ === undefined) window.__ACTIVE_REEL_VIDEO__ = null;
+    if (window.__ACTIVE_REEL_VIDEO__ === undefined)
+      window.__ACTIVE_REEL_VIDEO__ = null;
     setReelsMuted(Boolean(window.__REELS_MUTED__));
   }, []);
 
@@ -96,17 +102,14 @@ export default function ReelItem({ post }) {
       };
 
       let res;
-      try {
-        res = await fetch(url, merged);
-      } catch (err) {
-        throw err;
-      }
+      res = await fetch(url, merged);
 
       if (res.status === 401 && retry) {
-        // attempt refresh once
         try {
-          await fetch(`${API}/auth/refresh`, { method: "POST", credentials: "include" });
-          // retry original request once
+          await fetch(`${API}/auth/refresh`, {
+            method: "POST",
+            credentials: "include",
+          });
           return apiFetch(endpoint, options, false);
         } catch {
           return res;
@@ -128,14 +131,17 @@ export default function ReelItem({ post }) {
         const res = await apiFetch(`/follow/check/${idStr}`, { method: "GET" }, true);
         if (!mounted || !res || !res.ok) return;
         const data = await res.json().catch(() => ({}));
-        if (typeof data?.isFollowing === "boolean") setIsFollowing(Boolean(data.isFollowing));
-        else if (typeof data?.following === "boolean") setIsFollowing(Boolean(data.following));
-        else if (typeof data?.is_following === "boolean") setIsFollowing(Boolean(data.is_following));
-      } catch {
-        // ignore
-      }
+        if (typeof data?.isFollowing === "boolean")
+          setIsFollowing(Boolean(data.isFollowing));
+        else if (typeof data?.following === "boolean")
+          setIsFollowing(Boolean(data.following));
+        else if (typeof data?.is_following === "boolean")
+          setIsFollowing(Boolean(data.is_following));
+      } catch {}
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [followTarget, API, apiFetch]);
 
   // comments: load when open
@@ -151,7 +157,11 @@ export default function ReelItem({ post }) {
 
     (async () => {
       try {
-        const res = await apiFetch(`/posts/${encodeURIComponent(post.id)}/comments`, { method: "GET" }, true);
+        const res = await apiFetch(
+          `/posts/${encodeURIComponent(post.id)}/comments`,
+          { method: "GET" },
+          true
+        );
         if (!mounted) return;
         if (!res.ok) {
           setComments([]);
@@ -161,11 +171,11 @@ export default function ReelItem({ post }) {
         const list = Array.isArray(payload.comments) ? payload.comments : [];
         if (mounted) {
           setComments(list);
-          // scroll to bottom on next tick
           setTimeout(() => {
             try {
               if (commentsScrollRef.current) {
-                commentsScrollRef.current.scrollTop = commentsScrollRef.current.scrollHeight;
+                commentsScrollRef.current.scrollTop =
+                  commentsScrollRef.current.scrollHeight;
               }
             } catch {}
           }, 50);
@@ -177,7 +187,9 @@ export default function ReelItem({ post }) {
       }
     })();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [commentsOpen, post.id, API, apiFetch]);
 
   // Intersection observer autoplay
@@ -186,17 +198,24 @@ export default function ReelItem({ post }) {
     const container = containerRef.current;
     if (!v || !container) return;
 
-    const rootElement = typeof document !== "undefined" ? document.querySelector(".reels-feed") : null;
+    const rootElement =
+      typeof document !== "undefined"
+        ? document.querySelector(".reels-feed")
+        : null;
 
     const io = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
         if (!e) return;
         const ratio = e.intersectionRatio ?? 0;
+
         if (ratio < 0.6) {
-          try { v.pause(); } catch {}
+          try {
+            v.pause();
+          } catch {}
           setIsPlaying(false);
-          if (window.__ACTIVE_REEL_VIDEO__ === v) window.__ACTIVE_REEL_VIDEO__ = null;
+          if (window.__ACTIVE_REEL_VIDEO__ === v)
+            window.__ACTIVE_REEL_VIDEO__ = null;
           return;
         }
 
@@ -209,7 +228,9 @@ export default function ReelItem({ post }) {
 
         window.__ACTIVE_REEL_VIDEO__ = v;
         v.muted = Boolean(window.__REELS_MUTED__ === true);
-        v.play().then(() => setIsPlaying(true)).catch(() => {});
+        v.play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {});
       },
       { root: rootElement, threshold: [0.6] }
     );
@@ -227,7 +248,10 @@ export default function ReelItem({ post }) {
         if (v && !v.paused) v.pause();
       } catch {}
       try {
-        if (typeof window !== "undefined" && window.__ACTIVE_REEL_VIDEO__ === videoRef.current) {
+        if (
+          typeof window !== "undefined" &&
+          window.__ACTIVE_REEL_VIDEO__ === videoRef.current
+        ) {
           window.__ACTIVE_REEL_VIDEO__ = null;
         }
       } catch {}
@@ -254,10 +278,8 @@ export default function ReelItem({ post }) {
           : `/posts/${encodeURIComponent(post.id)}/like`;
         const res = await apiFetch(endpoint, { method: "POST" }, true);
         if (!res.ok) {
-          // rollback on failure
           setLiked(prev);
           setLikesCount((c) => (prev ? c + 1 : Math.max(0, c - 1)));
-          // Optionally show message for unauthorized
           if (res.status === 401) alert("Iltimos, tizimga kiring.");
         }
       } catch {
@@ -272,21 +294,31 @@ export default function ReelItem({ post }) {
   // submit comment
   const submitReelComment = useCallback(async () => {
     if (!commentText.trim()) return;
-    if (!API) { alert("Server manzili sozlanmagan."); return; }
+    if (!API) {
+      alert("Server manzili sozlanmagan.");
+      return;
+    }
 
     setCommentSubmitting(true);
     try {
-      const res = await apiFetch(`/posts/${encodeURIComponent(post.id)}/comment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: commentText.trim() }),
-      }, true);
+      const res = await apiFetch(
+        `/posts/${encodeURIComponent(post.id)}/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: commentText.trim() }),
+        },
+        true
+      );
 
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        // re-fetch comments
         try {
-          const fresh = await apiFetch(`/posts/${encodeURIComponent(post.id)}/comments`, { method: "GET" }, true);
+          const fresh = await apiFetch(
+            `/posts/${encodeURIComponent(post.id)}/comments`,
+            { method: "GET" },
+            true
+          );
           if (fresh.ok) {
             const payload = await fresh.json().catch(() => ({}));
             const list = Array.isArray(payload.comments) ? payload.comments : [];
@@ -295,12 +327,12 @@ export default function ReelItem({ post }) {
             setTimeout(() => {
               try {
                 if (commentsScrollRef.current) {
-                  commentsScrollRef.current.scrollTop = commentsScrollRef.current.scrollHeight;
+                  commentsScrollRef.current.scrollTop =
+                    commentsScrollRef.current.scrollHeight;
                 }
               } catch {}
             }, 50);
           } else {
-            // fallback: if server returned comment in response
             if (data?.comment) {
               setComments((p) => [...p, data.comment]);
               setCommentText("");
@@ -328,7 +360,7 @@ export default function ReelItem({ post }) {
   }, [API, commentText, post.id, apiFetch]);
 
   // pointer up: single tap = play/pause, double tap = like
-  const handlePointerUp = (e) => {
+  const handlePointerUp = () => {
     const now = Date.now();
     const last = lastTapRef.current;
     const DOUBLE_DELAY = 300;
@@ -338,8 +370,6 @@ export default function ReelItem({ post }) {
       clearTimeout(pointerSingleTimerRef.current);
       setOverlayHeart(true);
       setTimeout(() => setOverlayHeart(false), 650);
-
-      // double-tap => like
       toggleLike();
       return;
     }
@@ -378,30 +408,36 @@ export default function ReelItem({ post }) {
   };
 
   // follow/unfollow
-  const toggleFollow = useCallback(async (e) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    if (!followTarget) return;
-    if (!API) { alert("Server manzili sozlanmagan."); return; }
-
-    setFollowLoading(true);
-    const prev = isFollowing;
-    setIsFollowing(!prev);
-
-    try {
-      const idStr = encodeURIComponent(String(followTarget));
-      const endpoint = prev ? `/unfollow/${idStr}` : `/follow/${idStr}`;
-      const res = await apiFetch(endpoint, { method: "POST" }, true);
-      if (!res.ok) {
-        setIsFollowing(prev);
-        if (res.status === 401) alert("Iltimos, tizimga kiring.");
+  const toggleFollow = useCallback(
+    async (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      if (!followTarget) return;
+      if (!API) {
+        alert("Server manzili sozlanmagan.");
+        return;
       }
-    } catch {
-      setIsFollowing(prev);
-      alert("Server bilan bog'lanib bo'lmadi.");
-    } finally {
-      setFollowLoading(false);
-    }
-  }, [API, followTarget, isFollowing, apiFetch]);
+
+      setFollowLoading(true);
+      const prev = isFollowing;
+      setIsFollowing(!prev);
+
+      try {
+        const idStr = encodeURIComponent(String(followTarget));
+        const endpoint = prev ? `/unfollow/${idStr}` : `/follow/${idStr}`;
+        const res = await apiFetch(endpoint, { method: "POST" }, true);
+        if (!res.ok) {
+          setIsFollowing(prev);
+          if (res.status === 401) alert("Iltimos, tizimga kiring.");
+        }
+      } catch {
+        setIsFollowing(prev);
+        alert("Server bilan bog'lanib bo'lmadi.");
+      } finally {
+        setFollowLoading(false);
+      }
+    },
+    [API, followTarget, isFollowing, apiFetch]
+  );
 
   return (
     <div
@@ -453,68 +489,223 @@ export default function ReelItem({ post }) {
       </button>
 
       {overlayHeart && (
-        <div aria-hidden style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 30 }}>
-          <svg width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 21s-7.5-4.873-10.5-8.25C-0.5 8.75 4 4 7.5 6.5 9 7.75 10 9.5 12 11c2-1.5 3-3.25 4.5-4.5C20 4 24.5 8.75 22.5 12.75 19.5 16.127 12 21 12 21z" fill="#ef4444" />
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            zIndex: 30,
+          }}
+        >
+          <svg
+            width="96"
+            height="96"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 21s-7.5-4.873-10.5-8.25C-0.5 8.75 4 4 7.5 6.5 9 7.75 10 9.5 12 11c2-1.5 3-3.25 4.5-4.5C20 4 24.5 8.75 22.5 12.75 19.5 16.127 12 21 12 21z"
+              fill="#ef4444"
+            />
           </svg>
         </div>
       )}
 
-      <div style={{ position: "absolute", right: 12, bottom: "18%", display: "flex", flexDirection: "column", gap: 18, zIndex: 20, alignItems: "center" }} aria-hidden>
+      {/* RIGHT ACTIONS */}
+      <div
+        className="reel-actions-right"
+        style={{
+          position: "absolute",
+          right: 12,
+          bottom: "18%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+          zIndex: 20,
+          alignItems: "center",
+        }}
+        aria-hidden
+      >
         <button
-          onClick={(e) => { e.stopPropagation(); toggleLike(e); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLike(e);
+          }}
           aria-pressed={liked}
           aria-label={liked ? "Unlike" : "Like"}
-          style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(0,0,0,0.45)", border: "none", color: liked ? "#ef4444" : "#fff", fontSize: 20, cursor: "pointer" }}
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: "rgba(0,0,0,0.45)",
+            border: "none",
+            color: liked ? "#ef4444" : "#fff",
+            fontSize: 20,
+            cursor: "pointer",
+          }}
         >
           {liked ? "❤️" : "🤍"}
         </button>
 
         <button
-          onClick={(e) => { e.stopPropagation(); setCommentsOpen(true); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCommentsOpen(true);
+          }}
           aria-label="Comments"
-          style={{ width: 52, height: 52, borderRadius: 12, background: "rgba(0,0,0,0.45)", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 12,
+            background: "rgba(0,0,0,0.45)",
+            border: "none",
+            color: "#fff",
+            fontSize: 18,
+            cursor: "pointer",
+          }}
         >
           💬
         </button>
 
-        <div style={{ color: "#fff", fontSize: 12, textAlign: "center", userSelect: "none", lineHeight: 1.1 }}>
+        <div
+          style={{
+            color: "#fff",
+            fontSize: 12,
+            textAlign: "center",
+            userSelect: "none",
+            lineHeight: 1.1,
+          }}
+        >
           <div style={{ fontWeight: 700 }}>{likesCount}</div>
           <div style={{ opacity: 0.8, fontSize: 11 }}>{views} views</div>
         </div>
       </div>
 
-      <div style={{ position: "absolute", left: 12, bottom: 20, color: "#fff", zIndex: 40, maxWidth: "72%" }} aria-hidden>
+      {/* CREATOR / META (IMPORTANT: className reel-ui-bottom) */}
+      <div
+        className="reel-ui-bottom"
+        style={{
+          position: "absolute",
+          left: 12,
+          bottom: 20,
+          color: "#fff",
+          zIndex: 40,
+          maxWidth: "72%",
+        }}
+        aria-hidden
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href={`/profile/${profilePath}`} onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, color: "#fff", textDecoration: "none", fontWeight: 600 }}>
-            <div aria-hidden style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#333", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#fff" }}>
-              {(typeof usernameStr === "string" && usernameStr[0]) ? usernameStr[0].toUpperCase() : "U"}
+          <Link
+            href={`/profile/${profilePath}`}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              color: "#fff",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                backgroundColor: "#333",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "700",
+                color: "#fff",
+              }}
+            >
+              {typeof usernameStr === "string" && usernameStr[0]
+                ? usernameStr[0].toUpperCase()
+                : "U"}
             </div>
 
             <div style={{ fontWeight: 700 }}>@{usernameStr || "user"}</div>
           </Link>
 
-          {followTarget && (
-            !isFollowing ? (
-              <button onClick={toggleFollow} aria-label="Follow" disabled={followLoading} style={{ marginLeft: 8, background: "#1da1f2", border: "none", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
+          {followTarget &&
+            (!isFollowing ? (
+              <button
+                onClick={toggleFollow}
+                aria-label="Follow"
+                disabled={followLoading}
+                style={{
+                  marginLeft: 8,
+                  background: "#1da1f2",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "6px 10px",
+                  color: "#fff",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
                 {followLoading ? "..." : "Follow"}
               </button>
             ) : (
-              <button onClick={toggleFollow} aria-label="Unfollow" disabled={followLoading} style={{ marginLeft: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#fff", fontSize: 13, cursor: "pointer" }}>
+              <button
+                onClick={toggleFollow}
+                aria-label="Unfollow"
+                disabled={followLoading}
+                style={{
+                  marginLeft: 8,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 8,
+                  padding: "6px 10px",
+                  color: "#fff",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
                 {followLoading ? "..." : "Following"}
               </button>
-            )
-          )}
+            ))}
         </div>
 
         {post.title && (
-          <div style={{ fontSize: 14, lineHeight: "1.15", opacity: 0.95, marginTop: 8 }}>
+          <div
+            style={{
+              fontSize: 14,
+              lineHeight: "1.15",
+              opacity: 0.95,
+              marginTop: 8,
+            }}
+          >
             {post.title}
           </div>
         )}
       </div>
 
-      <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", opacity: 0.8, fontSize: 12, zIndex: 30, display: "flex", alignItems: "center", gap: 6, animation: "swipeAnim 1.6s ease-in-out infinite", color: "#fff", userSelect: "none" }} aria-hidden>
+      <div
+        style={{
+          position: "absolute",
+          bottom: 8,
+          left: "50%",
+          transform: "translateX(-50%)",
+          opacity: 0.8,
+          fontSize: 12,
+          zIndex: 30,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          animation: "swipeAnim 1.6s ease-in-out infinite",
+          color: "#fff",
+          userSelect: "none",
+        }}
+        aria-hidden
+      >
         <span style={{ fontSize: 14 }}>↑</span>
         <span>swipe</span>
       </div>
@@ -551,20 +742,50 @@ export default function ReelItem({ post }) {
               overflow: "hidden",
             }}
           >
-            <div style={{ width: 40, height: 4, background: "#444", margin: "0 auto 8px", borderRadius: 4 }} />
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                background: "#444",
+                margin: "0 auto 8px",
+                borderRadius: 4,
+              }}
+            />
 
-            <div ref={commentsScrollRef} style={{ flex: 1, overflowY: "auto", color: "#fff", paddingRight: 8 }}>
+            <div
+              ref={commentsScrollRef}
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                color: "#fff",
+                paddingRight: 8,
+              }}
+            >
               {commentsLoading ? (
-                <div style={{ textAlign: "center", color: "#777" }}>Yuklanmoqda...</div>
+                <div style={{ textAlign: "center", color: "#777" }}>
+                  Yuklanmoqda...
+                </div>
               ) : comments.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#777" }}>Hozircha komment yo'q</div>
+                <div style={{ textAlign: "center", color: "#777" }}>
+                  Hozircha komment yo'q
+                </div>
               ) : (
                 comments.map((c) => {
-                  const key = c.id || `${typeof c.user === "string" ? c.user : (c.user?.username || c.user?.name || String(c.user))}-${c.createdAt || Math.random()}`;
+                  const key =
+                    c.id ||
+                    `${typeof c.user === "string"
+                      ? c.user
+                      : c.user?.username || c.user?.name || String(c.user)
+                    }-${c.createdAt || Math.random()}`;
                   return (
                     <div key={key} style={{ marginBottom: 12 }}>
                       <strong style={{ color: "#fff" }}>
-                        {typeof c.user === "string" ? c.user : (c.user?.username || c.user?.name || String(c.user) || "user")}
+                        {typeof c.user === "string"
+                          ? c.user
+                          : c.user?.username ||
+                            c.user?.name ||
+                            String(c.user) ||
+                            "user"}
                       </strong>
                       <div style={{ color: "#ddd", marginTop: 4 }}>{c.text}</div>
                       <div style={{ color: "#777", fontSize: 12, marginTop: 6 }}>
@@ -581,7 +802,14 @@ export default function ReelItem({ post }) {
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Komment yozing..."
-                style={{ flex: 1, background: "#222", border: "1px solid #333", borderRadius: 8, padding: 10, color: "#fff" }}
+                style={{
+                  flex: 1,
+                  background: "#222",
+                  border: "1px solid #333",
+                  borderRadius: 8,
+                  padding: 10,
+                  color: "#fff",
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -589,7 +817,18 @@ export default function ReelItem({ post }) {
                   }
                 }}
               />
-              <button onClick={submitReelComment} disabled={commentSubmitting} style={{ background: "#1da1f2", border: "none", borderRadius: 8, padding: "10px 14px", color: "#fff", fontWeight: 700 }}>
+              <button
+                onClick={submitReelComment}
+                disabled={commentSubmitting}
+                style={{
+                  background: "#1da1f2",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  color: "#fff",
+                  fontWeight: 700,
+                }}
+              >
                 {commentSubmitting ? "..." : "Yuborish"}
               </button>
             </div>
