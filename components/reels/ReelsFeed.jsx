@@ -19,6 +19,20 @@ export default function ReelsFeed() {
       document.body.classList.remove("page--reels");
     };
   }, []);
+  useEffect(() => {
+  const main = document.querySelector(".app-main");
+  if (main) {
+    main.style.overflow = "hidden";
+    main.style.height = "100%";
+  }
+
+  return () => {
+    if (main) {
+      main.style.overflow = "";
+      main.style.height = "";
+    }
+  };
+}, []);
 
   // --- API must be explicitly provided ---
   const API =
