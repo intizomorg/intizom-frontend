@@ -42,18 +42,24 @@ export default function ChangePasswordModal({ open, onClose }) {
 
       const data = await res.json();
 
+      // ✅ TO‘G‘RI YECHIM (sen bergan kod)
       if (!res.ok) {
         setError(data.msg || "Xatolik yuz berdi");
         return;
       }
 
-      alert("Parol muvaffaqiyatli yangilandi. Qayta login qiling.");
-window.location.href = "/login";
-
-
+      // 🔐 Session tozalangan — majburiy chiqish
       setCurrent("");
       setNext("");
       setConfirm("");
+
+      onClose();
+
+      // cookie o‘chganini kutib keyin redirect
+      setTimeout(() => {
+        window.location.replace("/login");
+      }, 300);
+
     } catch {
       setError("Server bilan bog‘lanib bo‘lmadi");
     } finally {
@@ -67,29 +73,48 @@ window.location.href = "/login";
         <h3 style={title}>Change password</h3>
 
         <form onSubmit={handleSubmit}>
-          <input type="password" placeholder="Current password" value={current}
-            onChange={(e) => setCurrent(e.target.value)} style={input} />
+          <input
+            type="password"
+            placeholder="Current password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            style={input}
+          />
 
-          <input type="password" placeholder="New password" value={next}
-            onChange={(e) => setNext(e.target.value)} style={input} />
+          <input
+            type="password"
+            placeholder="New password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            style={input}
+          />
 
-          <input type="password" placeholder="Confirm new password" value={confirm}
-            onChange={(e) => setConfirm(e.target.value)} style={input} />
+          <input
+            type="password"
+            placeholder="Confirm new password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            style={input}
+          />
 
           {error && <div style={errorText}>{error}</div>}
 
-          <button type="submit" disabled={loading}
-            style={{ ...saveBtn, opacity: loading ? 0.6 : 1 }}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ ...saveBtn, opacity: loading ? 0.6 : 1 }}
+          >
             {loading ? "Saving..." : "Save"}
           </button>
         </form>
 
-        <button style={cancelBtn} onClick={onClose}>Cancel</button>
+        <button style={cancelBtn} onClick={onClose}>
+          Cancel
+        </button>
       </div>
     </div>
   );
 }
-
 
 /* ================= STYLES ================= */
 
