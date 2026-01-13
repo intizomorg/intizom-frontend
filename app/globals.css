@@ -337,125 +337,7 @@ body {
   text-align: center;
 }
 
-/* ================= REELS (FINAL & SAFE) ================= */
-
-.app-shell {
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background: #000;
-}
-
-.reel-video-wrap {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.reel-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #000;
-}
-
-/* Laptop va landscape video */
-@media (min-aspect-ratio: 1/1) {
-  .reel-video {
-    object-fit: contain;
-  }
-}
-
-
-/* 🔴 MUAMMO SHU YERDA EDI — HOZIR TUZATILDI */
-.reel-video {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;
-  object-position: center;
-  background: #000;
-  display: block;
-}
-
-/* Landscape videolar uchun xavfsiz holat */
-@media (min-aspect-ratio: 1/1) {
-  .reel-video {
-    object-fit: contain;
-  }
-}
-
-/* Right-side actions */
-.reel-actions {
-  position: absolute;
-  right: 16px;
-  bottom: 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  font-size: 24px;
-  z-index: 10;
-}
-
-.reel-actions .icon-button {
-  min-width: 48px;
-  min-height: 48px;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.02);
-}
-
-/* Bottom-left info */
-.reel-info {
-  position: absolute;
-  left: 16px;
-  bottom: 80px;
-  max-width: 70%;
-  font-size: 14px;
-  z-index: 10;
-  color: #fff;
-}
-
 /* ================= VOLUME UI (CSS-only visuals) ================= */
-
-.reel-volume {
-  position: absolute;
-  left: 16px;
-  bottom: 120px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,0,0,0.46);
-  border: 1px solid rgba(255,255,255,0.06);
-  padding: 8px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  z-index: 20;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  min-width: 44px;
-  min-height: 44px;
-  color: #fff;
-}
-
-.reel-volume .vol-icon {
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* muted state visual */
-.reel-item.muted .reel-volume,
-.reel-volume.muted {
-  background: rgba(255,255,255,0.03);
-  color: #9ca3af;
-}
 
 /* small active press feedback (no layout effect) */
 .reel-volume.icon-anim {
@@ -1087,12 +969,8 @@ body.page--reels .app-main {
     stroke-width: 2;
   }
 }
-@media (max-width: 1023px) {
-  .app-main {
-    padding-top: 56px;     /* mobile-topbar height */
-    padding-bottom: 88px; /* bottom-nav height */
-  }
-}
+/* NOTE: removed the global .app-main mobile padding here (kept route-scoped override instead) */
+
 /* ================= MOBILE MESSAGES UX ================= */
 
 @media (max-width: 768px) {
@@ -1247,3 +1125,59 @@ body.page--reels .app-main {
 */
 
 /* ================= END of Reels fixes ================= */
+
+
+/* ===== REELS FINAL FIX ===== */
+
+body.page--reels {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* app-main scroll qilmasin */
+body.page--reels .app-main {
+  height: 100%;
+  overflow: hidden !important;
+}
+
+/* faqat reels-feed scroll bo‘ladi */
+body.page--reels .reels-feed {
+  height: 100dvh;
+  width: 100vw;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  background: #000;
+}
+
+/* har bir reel to‘liq ekran */
+body.page--reels .reel-panel,
+body.page--reels .reel-item {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+/* video to‘liq to‘ldiradi */
+body.page--reels .reel-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* laptop / landscape da to‘liq ko‘rinadi */
+@media (min-aspect-ratio: 1/1) {
+  body.page--reels .reel-video {
+    object-fit: contain;
+  }
+}
+
+body.page--reels .app-main {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
