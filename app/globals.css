@@ -1144,11 +1144,20 @@ body.page--reels .app-main {
 body.page--reels .reels-feed {
   height: 100dvh;
   width: 100vw;
-  overflow-y: auto;
+  overflow-y: scroll;
   scroll-snap-type: y mandatory;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
+  scroll-behavior: auto;
+  -webkit-overflow-scrolling: auto;   /* 🔥 MUHIM — momentumni o‘chiradi */
+  touch-action: pan-y;               /* 🔥 faqat vertikal swipe */
   background: #000;
 }
+body.page--reels .reel-panel,
+body.page--reels .reel-item {
+  scroll-snap-stop: always;   /* 🔥 bu iOS / Androidda multi-skipni bloklaydi */
+}
+
 
 /* har bir reel to‘liq ekran */
 body.page--reels .reel-panel,
