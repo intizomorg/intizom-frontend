@@ -4,13 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, Image, Video, X } from "lucide-react";
 
-/* ========= TOKEN COOKIE'DAN OLISH ========= */
-function getTokenFromCookie() {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|; )token=([^;]*)/);
-  return match ? match[1] : null;
-}
-
 export default function UploadPage() {
   const router = useRouter();
   const API = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
@@ -88,12 +81,6 @@ export default function UploadPage() {
     e.preventDefault();
     if (loading) return;
 
-    const token = getTokenFromCookie();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
     if (!files.length) return setMsg("Media tanlang.");
 
     setLoading(true);
@@ -106,11 +93,16 @@ export default function UploadPage() {
 
     try {
       const res = await fetch(`${API}/upload`, {
-  method: "POST",
-  body: fd,
-  credentials: "include"
-});
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
 
+      // Agar server 401 qaytarsa — userni login sahifasiga yo‘naltiramiz
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
 
       const data = await res.json().catch(() => ({}));
 
