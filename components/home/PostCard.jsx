@@ -5,10 +5,38 @@ import Link from "next/link";
 import { Heart, MessageCircle, MoreHorizontal } from "lucide-react";
 import { AuthContext } from "@/context/AuthContext";
 
-/**
- * PostCard — hardened and defensive version (with comments loading + optimistic append)
- * Modified: comments panel now opens as a right-side sliding drawer (overlay) instead of bottom inline area.
- */
+/* --- Global (module-scope) audio coordinator ---
+   Faqat bitta video unmute bo'ladi. */
+let ACTIVE_VIDEO = null;
+
+// User bir marta gesture qilgandan keyin true bo'ladi (localStorage bilan saqlaymiz)
+function getSoundEnabled() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem("soundEnabled") === "1";
+}
+
+function setSoundEnabled(val) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("soundEnabled", val ? "1" : "0");
+}
+
+// Aktiv videoni almashtirish: oldingisini mute, yangisini (ruxsat bo'lsa) unmute
+function makeVideoActive(videoEl) {
+  if (!videoEl) return;
+
+  if (ACTIVE_VIDEO && ACTIVE_VIDEO !== videoEl) {
+    try {
+      ACTIVE_VIDEO.muted = true;
+    } catch {}
+  }
+  ACTIVE_VIDEO = videoEl;
+
+  const soundOn = getSoundEnabled();
+  try {
+    videoEl.muted = !soundOn;
+  } catch {}
+}
+/* ------------------------------------------------ */
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -133,11 +161,13 @@ function PostCard({ post, onDeleted }) {
     };
   }, [menuOpen]);
 
+  // ========== Updated IntersectionObserver effect (audio-aware) ==========
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
 
+    // default: mute (autoplay policies)
     try {
       v.muted = true;
     } catch {}
@@ -145,22 +175,22 @@ function PostCard({ post, onDeleted }) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          // 1) Avval aktiv qilib belgilaymiz (oldingi videoni mute qiladi)
+          makeVideoActive(v);
+
+          // 2) Play
           try {
             v.play().catch(() => {
-              try {
-                v.muted = true;
-                v.play().catch(() => {});
-              } catch {}
+              // Agar blok bo'lsa, hech narsa qilmaymiz (user gesture kerak bo'ladi)
             });
-          } catch {
-            try {
-              v.muted = true;
-              v.play().catch(() => {});
-            } catch {}
-          }
+          } catch {}
         } else {
+          // View'dan chiqsa: pause + mute
           try {
             v.pause();
+          } catch {}
+          try {
+            v.muted = true;
           } catch {}
         }
       },
@@ -169,6 +199,7 @@ function PostCard({ post, onDeleted }) {
 
     observer.observe(v);
     const observed = v;
+
     return () => {
       try {
         observer.unobserve(observed);
@@ -177,8 +208,15 @@ function PostCard({ post, onDeleted }) {
           observer.disconnect();
         } catch {}
       }
+
+      // unmount bo'lsa ham mute qilib qo'yamiz
+      try {
+        if (ACTIVE_VIDEO === observed) ACTIVE_VIDEO = null;
+        observed.muted = true;
+      } catch {}
     };
   }, [postId]);
+  // =======================================================================
 
   useEffect(() => {
     return () => {
@@ -299,6 +337,20 @@ function PostCard({ post, onDeleted }) {
 
   const DOUBLE_TAP_DELAY = 300;
   const handleTap = (e) => {
+    // 1) Birinchi gesture'da audio unlock
+    if (typeof window !== "undefined" && !getSoundEnabled()) {
+      setSoundEnabled(true);
+      // Agar bu tap video ustida bo'lsa, darhol aktiv qilib unmute qilamiz
+      const v = videoRef.current;
+      if (v) {
+        makeVideoActive(v);
+        try {
+          v.play().catch(() => {});
+        } catch {}
+      }
+    }
+
+    // ... qolgan sizdagi double-tap logikangiz o'z holicha qoladi
     const now = Date.now();
     const last = lastTapRef.current;
 
